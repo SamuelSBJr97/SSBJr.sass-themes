@@ -45,3 +45,10 @@ Desktop.ini
 ############################
 /themes/*/dist/
 /demo/assets/css/
+/demo/public/assets/css/
+
+############################
+# Vite (demo React)
+############################
+/demo/dist/
+**/.vite/

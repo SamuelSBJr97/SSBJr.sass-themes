@@ -14,7 +14,7 @@ Este workspace contém **3 temas Sass modernos** (com nomenclatura de classes co
 
 1. Instale dependências:
    - `npm install`
-2. Gere CSS e suba o demo:
+2. Gere CSS e suba o demo (React/Vite):
    - `npm run start`
 3. Abra:
    - `http://localhost:5173`
@@ -39,9 +39,14 @@ Este repo está pronto para publicar o demo no GitHub Pages usando GitHub Action
 2. Em **Build and deployment**, selecione **Source: GitHub Actions**.
 3. Faça push na branch `main`.
 
-O workflow [ .github/workflows/pages.yml ] compila o Sass e publica as páginas:
+O workflow [ .github/workflows/pages.yml ] compila o Sass, builda o demo React e publica as páginas:
 
 - `/` (index com seletor de tema)
 - `/aurora.html`
 - `/carbon.html`
 - `/atlas.html`
+
+## Build (local)
+
+- Apenas temas (gera CSS em `themes/*/dist` e `demo/public/assets/css`): `npm run build`
+- Site completo (temas + demo React): `npm run build:pages`
