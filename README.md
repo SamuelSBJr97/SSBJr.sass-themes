@@ -30,3 +30,18 @@ Além da demo com troca de tema (via seletor), existem páginas **fixas** por te
 > Observação: o dashboard é funcional com dados simulados (filtros, navegação, modais e export CSV).
 
 > Dica: você pode usar Live Server do VS Code também; só rode `npm run build` antes.
+
+## GitHub Pages (via GitHub Actions + docs/)
+
+Este repo está pronto para publicar o demo no GitHub Pages usando GitHub Actions, gerando o site em `docs/` durante o workflow.
+
+1. No GitHub, vá em **Settings → Pages**.
+2. Em **Build and deployment**, selecione **Source: GitHub Actions**.
+3. Faça push na branch `main`.
+
+O workflow [ .github/workflows/pages.yml ] compila o Sass e publica as páginas:
+
+- `/` (index com seletor de tema)
+- `/aurora.html`
+- `/carbon.html`
+- `/atlas.html`
