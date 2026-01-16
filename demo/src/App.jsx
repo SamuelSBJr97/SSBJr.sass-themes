@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import DataTable from './components/DataTable.jsx';
+import ReportsPage from './components/ReportsPage.jsx';
 
 const VEHICLES = [
   { id: 'v1', plate: 'ABC-1234', kind: 'Caminhão', group: 'Grupo Norte', fleet: 'Operação SP', driver: 'Marcos Lima', status: 'online', state: 'Em rota', speedKmh: 62, lastSignalSec: 15, distanceTodayKm: 182, fuelTodayL: 48, idleMin: 22 },
@@ -739,23 +740,7 @@ export default function App() {
             ) : null}
 
             {view === 'reports' ? (
-              <section>
-                <div className="card mb-4">
-                  <div className="card-header">
-                    <div className="card-title">Relatórios</div>
-                    <div className="card-subtitle text-muted">Geração simulada e exportação</div>
-                  </div>
-                  <div className="card-body">
-                    <div className="d-flex flex-wrap gap-2">
-                      <button className="btn btn-outline-warning" type="button">Gerar Rotas (PDF)</button>
-                      <button className="btn btn-outline-info" type="button">Exportar Velocidade (CSV)</button>
-                      <button className="btn btn-outline-secondary" type="button">Resumo Manutenção</button>
-                    </div>
-                    <hr className="my-3" />
-                    <div className="text-muted small">(demo) Selecione uma ação acima para simular geração.</div>
-                  </div>
-                </div>
-              </section>
+              <ReportsPage vehicles={VEHICLES} />
             ) : null}
 
             {view === 'settings' ? (
