@@ -1,0 +1,12 @@
+// Re-skin Select2 para combinar com form-control (Bootstrap 4)
+.select2-container{font-size:1rem}
+.select2-container .select2-selection--single{height:auto;border-radius:var(--radius-md);border:1px solid var(--border);background:var(--surface-2)}
+.select2-container--default .select2-selection--single .select2-selection__rendered{color:var(--text);padding:.55rem .75rem;line-height:1.25}
+.select2-container--default .select2-selection--single .select2-selection__arrow{height:100%;right:10px}
+.select2-container--default .select2-selection--single .select2-selection__arrow b{border-color:var(--placeholder) transparent transparent transparent}
+.select2-container--default.select2-container--focus .select2-selection--single{border-color:var(--primary);box-shadow:var(--focus-ring)}
+
+.select2-dropdown{border:1px solid var(--border);background:var(--surface);border-radius:var(--radius-md);box-shadow:var(--shadow-sm)}
+.select2-container--default .select2-search--dropdown .select2-search__field{border-radius:var(--radius-md);border:1px solid var(--border);background:var(--surface-2);color:var(--text);padding:.5rem .6rem}
+.select2-results__option{padding:.55rem .75rem}
+.select2-container--default .select2-results__option--highlighted.select2-results__option--selectable{background:var(--primary-soft);color:var(--text)}

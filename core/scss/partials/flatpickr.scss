@@ -1,0 +1,10 @@
+// Re-skin Flatpickr (datetimepicker) com estética do tema
+.flatpickr-calendar{background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);border-radius:var(--radius-lg)}
+.flatpickr-months .flatpickr-month{color:var(--text)}
+.flatpickr-current-month .flatpickr-monthDropdown-months{background:transparent;color:var(--text)}
+.flatpickr-weekday{color:var(--muted)}
+
+.flatpickr-day{border-radius:12px;color:var(--text)}
+.flatpickr-day:hover{background:var(--text-soft-strong)}
+.flatpickr-day.selected,.flatpickr-day.startRange,.flatpickr-day.endRange{background:var(--primary-soft-strong);color:var(--text);box-shadow:inset 0 0 0 1px var(--primary-outline-strong)}
+.flatpickr-time input{color:var(--text)}

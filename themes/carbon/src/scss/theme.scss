@@ -1,0 +1,36 @@
+// Carbon — escuro, enterprise, baixo ruído visual
+$theme-id: "carbon";
+$theme-name: "Carbon";
+$is-dark: true;
+
+$palette: (
+  "primary": #22c55e,
+  "secondary": #94a3b8,
+  "success": #22c55e,
+  "info": #38bdf8,
+  "warning": #fbbf24,
+  "danger": #fb7185
+);
+
+$neutrals: (
+  "body-bg": #05070d,
+  "surface": #0b1020,
+  "surface-2": #0f172a,
+  "text": #e5e7eb,
+  "muted": #93a4b8,
+  "border": rgba(148, 163, 184, 0.20)
+);
+
+$shadow: (
+  "sm": 0 10px 30px rgba(0, 0, 0, 0.35),
+  "md": 0 22px 70px rgba(0, 0, 0, 0.45)
+);
+
+@use "../../../core/scss/build" with (
+  $theme-id: $theme-id,
+  $theme-name: $theme-name,
+  $is-dark: $is-dark,
+  $palette: $palette,
+  $neutrals: $neutrals,
+  $shadow: $shadow
+);

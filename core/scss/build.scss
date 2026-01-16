@@ -1,0 +1,129 @@
+@use "sass:map";
+@use "sass:color";
+
+$theme-id: "theme" !default;
+$theme-name: "Theme" !default;
+$is-dark: false !default;
+
+$palette: (
+  "primary": #2563eb,
+  "secondary": #64748b,
+  "success": #16a34a,
+  "info": #0891b2,
+  "warning": #f59e0b,
+  "danger": #dc2626
+) !default;
+
+$neutrals: (
+  "body-bg": #0b1220,
+  "surface": #0f172a,
+  "surface-2": #111c33,
+  "text": #e5e7eb,
+  "muted": #94a3b8,
+  "border": rgba(148, 163, 184, 0.22)
+) !default;
+
+$radius: (
+  "sm": 10px,
+  "md": 14px,
+  "lg": 18px
+) !default;
+
+$shadow: (
+  "sm": 0 6px 18px rgba(0, 0, 0, 0.18),
+  "md": 0 14px 38px rgba(0, 0, 0, 0.22)
+) !default;
+
+$font-family-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji" !default;
+
+@function c($key) {
+  @return map.get($palette, $key);
+}
+
+@function n($key) {
+  @return map.get($neutrals, $key);
+}
+
+@function r($key) {
+  @return map.get($radius, $key);
+}
+
+@function sh($key) {
+  @return map.get($shadow, $key);
+}
+
+:root {
+  --theme-id: #{$theme-id};
+  --theme-name: #{$theme-name};
+
+  --primary: #{c("primary")};
+  --secondary: #{c("secondary")};
+  --success: #{c("success")};
+  --info: #{c("info")};
+  --warning: #{c("warning")};
+  --danger: #{c("danger")};
+
+  --body-bg: #{n("body-bg")};
+  --surface: #{n("surface")};
+  --surface-2: #{n("surface-2")};
+  --text: #{n("text")};
+  --muted: #{n("muted")};
+  --border: #{n("border")};
+
+  --radius-sm: #{r("sm")};
+  --radius-md: #{r("md")};
+  --radius-lg: #{r("lg")};
+
+  --shadow-sm: #{sh("sm")};
+  --shadow-md: #{sh("md")};
+
+  --font-sans: #{$font-family-sans};
+
+  --focus-ring: 0 0 0 0.22rem #{color.change(c("primary"), $alpha: 0.25)};
+
+  // Enterprise UI tokens (evitam hardcode de cores nos partials)
+  --primary-soft: #{color.change(c("primary"), $alpha: 0.18)};
+  --primary-soft-strong: #{color.change(c("primary"), $alpha: 0.22)};
+  --primary-outline: #{color.change(c("primary"), $alpha: 0.35)};
+  --primary-outline-strong: #{color.change(c("primary"), $alpha: 0.45)};
+
+  --secondary-soft: #{color.change(c("secondary"), $alpha: 0.12)};
+  --secondary-outline: #{color.change(c("secondary"), $alpha: 0.35)};
+
+  --success-soft: #{color.change(c("success"), $alpha: 0.18)};
+  --success-outline: #{color.change(c("success"), $alpha: 0.35)};
+
+  --info-soft: #{color.change(c("info"), $alpha: 0.14)};
+  --info-outline: #{color.change(c("info"), $alpha: 0.35)};
+
+  --warning-soft: #{color.change(c("warning"), $alpha: 0.18)};
+  --warning-outline: #{color.change(c("warning"), $alpha: 0.35)};
+
+  --danger-soft: #{color.change(c("danger"), $alpha: 0.18)};
+  --danger-outline: #{color.change(c("danger"), $alpha: 0.35)};
+  --danger-outline-strong: #{color.change(c("danger"), $alpha: 0.50)};
+
+  --text-soft: #{color.change(n("text"), $alpha: if($is-dark, 0.06, 0.04))};
+  --text-soft-strong: #{color.change(n("text"), $alpha: if($is-dark, 0.10, 0.07))};
+  --text-xxsoft: #{color.change(n("text"), $alpha: if($is-dark, 0.03, 0.025))};
+  --border-strong: #{color.change(n("text"), $alpha: if($is-dark, 0.26, 0.18))};
+  --placeholder: #{color.change(n("muted"), $alpha: if($is-dark, 0.78, 0.82))};
+}
+
+@import "partials/reboot";
+@import "partials/grid";
+@import "partials/typography";
+@import "partials/utilities";
+
+@import "partials/cards";
+@import "partials/nav";
+@import "partials/buttons";
+@import "partials/forms";
+@import "partials/tables";
+@import "partials/badges";
+@import "partials/modal";
+
+@import "partials/select2";
+@import "partials/flatpickr";
+
+@import "partials/dashboard";

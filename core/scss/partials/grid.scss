@@ -1,0 +1,23 @@
+// Grid simplificado compatível com Bootstrap 4 (12 colunas)
+.container-fluid{width:100%;padding-right:1rem;padding-left:1rem;margin-right:auto;margin-left:auto}
+.row{display:flex;flex-wrap:wrap;margin-right:-0.5rem;margin-left:-0.5rem}
+[class^="col-"]{position:relative;width:100%;padding-right:0.5rem;padding-left:0.5rem}
+
+// breakpoints (sm, md, lg)
+@mixin col($n){flex:0 0 percentage($n/12);max-width:percentage($n/12)}
+
+@media (min-width:576px){
+  .col-sm-6{@include col(6)}
+  .col-sm-12{@include col(12)}
+}
+@media (min-width:768px){
+  .col-md-4{@include col(4)}
+  .col-md-6{@include col(6)}
+  .col-md-8{@include col(8)}
+  .col-md-12{@include col(12)}
+}
+@media (min-width:992px){
+  .col-lg-4{@include col(4)}
+  .col-lg-8{@include col(8)}
+  .col-lg-12{@include col(12)}
+}
