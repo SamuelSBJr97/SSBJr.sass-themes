@@ -176,11 +176,17 @@ export default function DataTable({
             </tr>
           </thead>
           <tbody>
-            {pageRows.map((r) => (
-              <tr key={rowKey(r)}>
-                {columns.map((col) => (
-                  <td key={col.id} className={col.className}>{col.cell(r)}</td>
-                ))}
+            {pageRows.map((r, rowIndex) => (
+              <tr key={rowKey ? rowKey(r, rowIndex) : rowIndex}>
+                {columns.map((col) => {
+                  const value = r && col && col.id in r ? r[col.id] : '';
+                  const content = typeof col.cell === 'function' ? col.cell(r, rowIndex) : value;
+                  return (
+                    <td key={col.id} className={col.className}>
+                      {content}
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>
