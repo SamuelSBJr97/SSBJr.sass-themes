@@ -28,6 +28,9 @@
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1rem;border-bottom:1px solid var(--stroke-1);background:var(--acrylic);backdrop-filter:blur(14px) saturate(1.2)}
 .topbar-right{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:.5rem}
 
+// Espaçamento entre o topo (topbar) e o conteúdo principal
+.content > .container-fluid{padding-top:1rem}
+
 .footer{padding:1rem;border-top:1px solid var(--stroke-1);color:var(--muted)}
 
 .map-placeholder{border:1px solid var(--stroke-1);border-radius:var(--radius-lg);background:radial-gradient(800px 380px at 15% 20%, var(--primary-soft), transparent 60%),radial-gradient(700px 320px at 75% 30%, var(--info-soft), transparent 60%),var(--mica);height:320px;display:flex;align-items:center;justify-content:center;box-shadow:var(--elev-1)}
