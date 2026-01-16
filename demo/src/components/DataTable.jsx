@@ -38,32 +38,55 @@ export default function DataTable({
   rows,
   rowKey,
   getSearchText,
+  mode = 'client',
+  totalRows,
+  page: controlledPage,
+  onPageChange,
+  pageSize: controlledPageSize,
+  onPageSizeChange,
+  search: controlledSearch,
+  onSearchChange,
+  sort: controlledSort,
+  onSortChange,
+  loading = false,
   variant = 'standard',
   initialPageSize = 6,
   pageSizeOptions = [6, 10, 25],
   searchPlaceholder = 'Buscar…',
   emptyText = 'Nenhum registro encontrado.'
 }) {
+  const isServer = mode === 'server';
+
   const [search, setSearch] = useState('');
   const [pageSize, setPageSize] = useState(initialPageSize);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState({ colId: null, dir: 'asc' });
 
+  const effectiveSearch = isServer ? (controlledSearch ?? '') : search;
+  const effectivePageSize = isServer ? (controlledPageSize ?? initialPageSize) : pageSize;
+  const effectivePage = isServer ? (controlledPage ?? 1) : page;
+  const effectiveSort = isServer ? (controlledSort ?? { colId: null, dir: 'asc' }) : sort;
+
+  const canSearch = isServer ? typeof onSearchChange === 'function' : !!getSearchText;
+
   const filtered = useMemo(() => {
-    const term = (search || '').trim().toLowerCase();
+    if (isServer) return rows;
+
+    const term = (effectiveSearch || '').trim().toLowerCase();
     if (!term) return rows;
     if (!getSearchText) return rows;
     return rows.filter((r) => getSearchText(r).toLowerCase().includes(term));
-  }, [rows, search, getSearchText]);
+  }, [rows, effectiveSearch, getSearchText, isServer]);
 
   const sorted = useMemo(() => {
+    if (isServer) return filtered;
     if (variant === 'summary') return filtered;
-    if (!sort.colId) return filtered;
+    if (!effectiveSort.colId) return filtered;
 
-    const col = columns.find((c) => c.id === sort.colId);
+    const col = columns.find((c) => c.id === effectiveSort.colId);
     if (!col || !col.sortValue) return filtered;
 
-    const dir = sort.dir === 'desc' ? -1 : 1;
+    const dir = effectiveSort.dir === 'desc' ? -1 : 1;
     const withIndex = filtered.map((r, i) => ({ r, i }));
 
     withIndex.sort((a, b) => {
@@ -75,32 +98,49 @@ export default function DataTable({
     });
 
     return withIndex.map((x) => x.r);
-  }, [filtered, columns, sort, variant]);
+  }, [filtered, columns, effectiveSort, variant, isServer]);
 
   const pageCount = useMemo(() => {
     if (variant === 'summary') return 1;
-    return Math.max(1, Math.ceil(sorted.length / pageSize));
-  }, [sorted.length, pageSize, variant]);
+    const total = isServer ? (typeof totalRows === 'number' ? totalRows : rows.length) : sorted.length;
+    return Math.max(1, Math.ceil(total / effectivePageSize));
+  }, [sorted.length, effectivePageSize, variant, isServer, totalRows, rows.length]);
 
-  const safePage = clamp(page, 1, pageCount);
+  const safePage = clamp(effectivePage, 1, pageCount);
   const pageRows = useMemo(() => {
     if (variant === 'summary') return sorted;
-    const start = (safePage - 1) * pageSize;
-    return sorted.slice(start, start + pageSize);
-  }, [sorted, safePage, pageSize, variant]);
+    if (isServer) return rows;
+
+    const start = (safePage - 1) * effectivePageSize;
+    return sorted.slice(start, start + effectivePageSize);
+  }, [sorted, safePage, effectivePageSize, variant, isServer, rows]);
 
   const range = useMemo(() => {
-    if (!sorted.length) return { start: 0, end: 0, total: 0 };
-    if (variant === 'summary') return { start: 1, end: sorted.length, total: sorted.length };
+    const total = isServer ? (typeof totalRows === 'number' ? totalRows : rows.length) : sorted.length;
+    const len = pageRows.length;
 
-    const start = (safePage - 1) * pageSize + 1;
-    const end = Math.min(sorted.length, safePage * pageSize);
-    return { start, end, total: sorted.length };
-  }, [sorted.length, safePage, pageSize, variant]);
+    if (!total) return { start: 0, end: 0, total: 0 };
+    if (variant === 'summary') return { start: 1, end: total, total };
+
+    const start = (safePage - 1) * effectivePageSize + 1;
+    const end = Math.min(total, start + Math.max(0, len - 1));
+    return { start, end, total };
+  }, [sorted.length, safePage, effectivePageSize, variant, isServer, totalRows, rows.length, pageRows.length]);
 
   function toggleSort(col) {
     if (variant === 'summary') return;
-    if (!col.sortValue) return;
+    const sortable = isServer ? (col.sortable || !!col.sortValue) : !!col.sortValue;
+    if (!sortable) return;
+
+    if (isServer) {
+      const next = (() => {
+        if (effectiveSort.colId !== col.id) return { colId: col.id, dir: 'asc' };
+        return { colId: col.id, dir: effectiveSort.dir === 'asc' ? 'desc' : 'asc' };
+      })();
+      onSortChange?.(next);
+      onPageChange?.(1);
+      return;
+    }
 
     setPage(1);
     setSort((s) => {
@@ -109,7 +149,7 @@ export default function DataTable({
     });
   }
 
-  function onSearchChange(value) {
+  function onLocalSearchChange(value) {
     setSearch(value);
     setPage(1);
   }
@@ -123,7 +163,19 @@ export default function DataTable({
           <div className="dataTables_length">
             <label className="mb-0">
               <span className="mr-2">Exibir</span>
-              <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}>
+              <select
+                value={effectivePageSize}
+                onChange={(e) => {
+                  const next = Number(e.target.value);
+                  if (isServer) {
+                    onPageSizeChange?.(next);
+                    onPageChange?.(1);
+                  } else {
+                    setPageSize(next);
+                    setPage(1);
+                  }
+                }}
+              >
                 {pageSizeOptions.map((n) => (
                   <option key={n} value={n}>{n}</option>
                 ))}
@@ -131,15 +183,23 @@ export default function DataTable({
             </label>
           </div>
 
-          {getSearchText ? (
+          {canSearch ? (
             <div className="dataTables_filter">
               <label className="mb-0">
                 <span className="mr-2">Buscar</span>
                 <input
                   type="search"
-                  value={search}
+                  value={effectiveSearch}
                   placeholder={searchPlaceholder}
-                  onChange={(e) => onSearchChange(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (isServer) {
+                      onSearchChange?.(v);
+                      onPageChange?.(1);
+                    } else {
+                      onLocalSearchChange(v);
+                    }
+                  }}
                 />
               </label>
             </div>
@@ -152,9 +212,9 @@ export default function DataTable({
           <thead>
             <tr>
               {columns.map((col) => {
-                const isSorted = sort.colId === col.id;
-                const ariaSort = isSorted ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none';
-                const sortable = !!col.sortValue && variant !== 'summary';
+                const isSorted = effectiveSort.colId === col.id;
+                const ariaSort = isSorted ? (effectiveSort.dir === 'asc' ? 'ascending' : 'descending') : 'none';
+                const sortable = variant !== 'summary' && (isServer ? (col.sortable || !!col.sortValue) : !!col.sortValue);
 
                 return (
                   <th
@@ -195,6 +255,8 @@ export default function DataTable({
 
       {!pageRows.length ? <div className="text-muted small">{emptyText}</div> : null}
 
+      {loading ? <div className="text-muted small mt-2">Carregando…</div> : null}
+
       {variant !== 'summary' ? (
         <div className="d-flex align-items-center justify-content-between mt-2">
           <div className="dataTables_info">
@@ -206,7 +268,7 @@ export default function DataTable({
               <button
                 type="button"
                 className={`paginate_button previous ${safePage <= 1 ? 'disabled' : ''}`}
-                onClick={() => setPage((p) => clamp(p - 1, 1, pageCount))}
+                onClick={() => (isServer ? onPageChange?.(clamp(safePage - 1, 1, pageCount)) : setPage((p) => clamp(p - 1, 1, pageCount)))}
                 disabled={safePage <= 1}
               >
                 Anterior
@@ -220,7 +282,7 @@ export default function DataTable({
                     key={n}
                     type="button"
                     className={`paginate_button ${n === safePage ? 'current' : ''}`}
-                    onClick={() => setPage(n)}
+                    onClick={() => (isServer ? onPageChange?.(n) : setPage(n))}
                   >
                     {n}
                   </button>
@@ -230,7 +292,7 @@ export default function DataTable({
               <button
                 type="button"
                 className={`paginate_button next ${safePage >= pageCount ? 'disabled' : ''}`}
-                onClick={() => setPage((p) => clamp(p + 1, 1, pageCount))}
+                onClick={() => (isServer ? onPageChange?.(clamp(safePage + 1, 1, pageCount)) : setPage((p) => clamp(p + 1, 1, pageCount)))}
                 disabled={safePage >= pageCount}
               >
                 Próximo

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import DataTable from './DataTable.jsx';
 
 function hashToInt(input) {
@@ -206,20 +206,52 @@ function makeDriverBehaviorRows(vehicles, periodDays) {
   });
 }
 
+function makePositionsRows(vehicles, periodDays, offset, limit) {
+  const rows = [];
+  for (let i = 0; i < limit; i += 1) {
+    const idx = offset + i;
+    const v = vehicles[idx % vehicles.length];
+    const h = hashToInt(`${v.id}:pos:${periodDays}:${idx}`);
+    const lat = (-23.55 + ((h % 2000) / 10000)).toFixed(5);
+    const lng = (-46.63 + (((h >>> 11) % 2000) / 10000)).toFixed(5);
+    const speed = clamp(5 + (h % 110), 0, 120);
+    rows.push({
+      when: `D-${(idx % periodDays) + 1} ${String((h % 24)).padStart(2, '0')}:${String((h % 60)).padStart(2, '0')}`,
+      plate: v.plate,
+      fleet: v.fleet,
+      lat,
+      lng,
+      speedKmh: speed
+    });
+  }
+  return rows;
+}
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+function normalizeSort(sort) {
+  if (!sort || !sort.colId) return { colId: null, dir: 'asc' };
+  return { colId: sort.colId, dir: sort.dir === 'desc' ? 'desc' : 'asc' };
+}
+
 export default function ReportsPage({ vehicles }) {
   const [periodDays, setPeriodDays] = useState(7);
   const [fleet, setFleet] = useState('');
+  const [activeId, setActiveId] = useState('telemetry');
 
-  const refs = {
-    telemetry: useRef(null),
-    trips: useRef(null),
-    speeding: useRef(null),
-    fuel: useRef(null),
-    idle: useRef(null),
-    maintenance: useRef(null),
-    geofence: useRef(null),
-    behavior: useRef(null)
-  };
+  const [states, setStates] = useState(() => ({
+    telemetry: { page: 1, pageSize: 10, search: '', sort: { colId: null, dir: 'asc' }, rows: [], total: 0, loading: false },
+    trips: { page: 1, pageSize: 10, search: '', sort: { colId: null, dir: 'asc' }, rows: [], total: 0, loading: false },
+    speeding: { page: 1, pageSize: 10, search: '', sort: { colId: 'when', dir: 'desc' }, rows: [], total: 0, loading: false },
+    fuel: { page: 1, pageSize: 10, search: '', sort: { colId: null, dir: 'asc' }, rows: [], total: 0, loading: false },
+    idle: { page: 1, pageSize: 10, search: '', sort: { colId: null, dir: 'asc' }, rows: [], total: 0, loading: false },
+    maintenance: { page: 1, pageSize: 10, search: '', sort: { colId: 'priority', dir: 'asc' }, rows: [], total: 0, loading: false },
+    geofence: { page: 1, pageSize: 10, search: '', sort: { colId: 'when', dir: 'desc' }, rows: [], total: 0, loading: false },
+    behavior: { page: 1, pageSize: 10, search: '', sort: { colId: 'safetyScore', dir: 'desc' }, rows: [], total: 0, loading: false },
+    positions: { page: 1, pageSize: 10, search: '', sort: { colId: 'when', dir: 'desc' }, rows: [], total: 0, loading: false }
+  }));
 
   const fleetOptions = useMemo(() => {
     return Array.from(new Set(vehicles.map((v) => v.fleet))).sort();
@@ -229,33 +261,381 @@ export default function ReportsPage({ vehicles }) {
     return fleet ? vehicles.filter((v) => v.fleet === fleet) : vehicles;
   }, [vehicles, fleet]);
 
-  const telemetryRows = useMemo(() => scopedVehicles.map(makeTelemetryForVehicle), [scopedVehicles]);
-  const tripRows = useMemo(() => makeTripSummaryRows(scopedVehicles, periodDays), [scopedVehicles, periodDays]);
-  const speedingRows = useMemo(() => makeSpeedingRows(scopedVehicles, periodDays), [scopedVehicles, periodDays]);
-  const fuelRows = useMemo(() => makeFuelRows(scopedVehicles, periodDays), [scopedVehicles, periodDays]);
-  const idleRows = useMemo(() => makeIdleRows(scopedVehicles, periodDays), [scopedVehicles, periodDays]);
-  const maintenanceRows = useMemo(() => makeMaintenanceRows(scopedVehicles), [scopedVehicles]);
-  const geofenceRows = useMemo(() => makeGeofenceRows(scopedVehicles, periodDays), [scopedVehicles, periodDays]);
-  const behaviorRows = useMemo(() => makeDriverBehaviorRows(scopedVehicles, periodDays), [scopedVehicles, periodDays]);
+  const reportDefs = useMemo(() => {
+    return [
+      {
+        id: 'telemetry',
+        title: 'Telemetria Atual',
+        subtitle: 'Ignição, velocidade, RPM, combustível, temperatura, bateria e GPS',
+        category: 'Rastreamento',
+        estimateTotal: () => scopedVehicles.length,
+        columns: [
+          { id: 'plate', header: 'Veículo', sortable: true },
+          { id: 'fleet', header: 'Frota', sortable: true },
+          { id: 'ignition', header: 'Ignição', sortable: true },
+          { id: 'speed', header: 'Veloc.', cell: (r) => `${r.speedKmh} km/h`, sortable: true },
+          { id: 'rpm', header: 'RPM', cell: (r) => Number(r.rpm).toLocaleString('pt-BR'), sortable: true },
+          { id: 'fuel', header: 'Combustível', cell: (r) => formatPct(r.fuelPct), sortable: true },
+          { id: 'coolant', header: 'Temp.', cell: (r) => `${r.coolantC}°C`, sortable: true },
+          { id: 'battery', header: 'Bateria', cell: (r) => `${r.batteryV} V`, sortable: true }
+        ],
+        async fetchPage({ page, pageSize }) {
+          const total = scopedVehicles.length;
+          const start = (page - 1) * pageSize;
+          const slice = scopedVehicles.slice(start, start + pageSize).map(makeTelemetryForVehicle);
+          await sleep(120);
+          return { rows: slice, total };
+        },
+        async exportAll() {
+          const rows = scopedVehicles.map(makeTelemetryForVehicle);
+          downloadCsv('telemetria_atual.csv', rows);
+        }
+      },
+      {
+        id: 'trips',
+        title: 'Relatório de Viagens',
+        subtitle: 'Resumo por veículo: viagens, distância, tempo em movimento e tempo parado',
+        category: 'Operação',
+        estimateTotal: () => scopedVehicles.length,
+        columns: [
+          { id: 'plate', header: 'Veículo', sortable: true },
+          { id: 'fleet', header: 'Frota', sortable: true },
+          { id: 'trips', header: 'Viagens', sortable: true },
+          { id: 'distanceKm', header: 'Distância', cell: (r) => formatKm(r.distanceKm), sortable: true },
+          { id: 'driveTime', header: 'Em movimento' },
+          { id: 'idleTime', header: 'Parado' }
+        ],
+        async fetchPage({ page, pageSize }) {
+          const all = makeTripSummaryRows(scopedVehicles, periodDays);
+          const total = all.length;
+          const start = (page - 1) * pageSize;
+          await sleep(120);
+          return { rows: all.slice(start, start + pageSize), total };
+        },
+        async exportAll() {
+          const all = makeTripSummaryRows(scopedVehicles, periodDays);
+          downloadCsv('relatorio_viagens.csv', all);
+        }
+      },
+      {
+        id: 'speeding',
+        title: 'Eventos de Excesso de Velocidade',
+        subtitle: 'Ocorrências com pico, limite e excesso (carregamento paginado)',
+        category: 'Segurança',
+        estimateTotal: () => scopedVehicles.length * Math.max(10, periodDays * 10),
+        columns: [
+          { id: 'plate', header: 'Veículo', sortable: true },
+          { id: 'fleet', header: 'Frota', sortable: true },
+          { id: 'when', header: 'Quando', sortable: true },
+          { id: 'speedKmh', header: 'Pico', cell: (r) => `${r.speedKmh} km/h`, sortable: true },
+          { id: 'limitKmh', header: 'Limite', cell: (r) => `${r.limitKmh} km/h`, sortable: true },
+          { id: 'excessKmh', header: 'Excesso', cell: (r) => `${r.excessKmh} km/h`, sortable: true }
+        ],
+        async fetchPage({ page, pageSize }) {
+          const total = scopedVehicles.length * Math.max(10, periodDays * 10);
+          const start = (page - 1) * pageSize;
+          const rows = [];
+          for (let i = 0; i < pageSize; i += 1) {
+            const idx = start + i;
+            if (idx >= total) break;
+            const v = scopedVehicles[idx % scopedVehicles.length];
+            const h = hashToInt(`${v.id}:speed:${periodDays}:${idx}`);
+            const peak = clamp(74 + (h % 48), 70, 140);
+            const limit = 80;
+            rows.push({
+              plate: v.plate,
+              fleet: v.fleet,
+              when: `D-${(idx % periodDays) + 1} ${String((h % 24)).padStart(2, '0')}:${String((h % 60)).padStart(2, '0')}`,
+              speedKmh: peak,
+              limitKmh: limit,
+              excessKmh: peak - limit
+            });
+          }
+          await sleep(160);
+          return { rows, total };
+        },
+        async exportAll() {
+          const total = scopedVehicles.length * Math.max(10, periodDays * 10);
+          const cap = Math.min(total, 5000);
+          const out = [];
+          for (let idx = 0; idx < cap; idx += 1) {
+            const v = scopedVehicles[idx % scopedVehicles.length];
+            const h = hashToInt(`${v.id}:speed:${periodDays}:${idx}`);
+            const peak = clamp(74 + (h % 48), 70, 140);
+            const limit = 80;
+            out.push({
+              plate: v.plate,
+              fleet: v.fleet,
+              when: `D-${(idx % periodDays) + 1} ${String((h % 24)).padStart(2, '0')}:${String((h % 60)).padStart(2, '0')}`,
+              speedKmh: peak,
+              limitKmh: limit,
+              excessKmh: peak - limit
+            });
+            if (idx > 0 && idx % 800 === 0) await sleep(0);
+          }
+          downloadCsv('eventos_velocidade.csv', out);
+        }
+      },
+      {
+        id: 'fuel',
+        title: 'Consumo de Combustível',
+        subtitle: 'Distância, litros e média (L/100km)',
+        category: 'Custos',
+        estimateTotal: () => scopedVehicles.length,
+        columns: [
+          { id: 'plate', header: 'Veículo', sortable: true },
+          { id: 'fleet', header: 'Frota', sortable: true },
+          { id: 'distanceKm', header: 'Distância', cell: (r) => formatKm(r.distanceKm), sortable: true },
+          { id: 'fuelL', header: 'Combustível', cell: (r) => formatL(r.fuelL), sortable: true },
+          { id: 'avgLPer100Km', header: 'Média', cell: (r) => `${r.avgLPer100Km} L/100km`, sortable: true }
+        ],
+        async fetchPage({ page, pageSize }) {
+          const all = makeFuelRows(scopedVehicles, periodDays);
+          const total = all.length;
+          const start = (page - 1) * pageSize;
+          await sleep(120);
+          return { rows: all.slice(start, start + pageSize), total };
+        },
+        async exportAll() {
+          const all = makeFuelRows(scopedVehicles, periodDays);
+          downloadCsv('consumo_combustivel.csv', all);
+        }
+      },
+      {
+        id: 'idle',
+        title: 'Tempo Parado / Marcha Lenta',
+        subtitle: 'Tempo parado, eventos e desperdício aproximado',
+        category: 'Operação',
+        estimateTotal: () => scopedVehicles.length,
+        columns: [
+          { id: 'plate', header: 'Veículo', sortable: true },
+          { id: 'fleet', header: 'Frota', sortable: true },
+          { id: 'idleTime', header: 'Tempo parado' },
+          { id: 'idleEvents', header: 'Eventos', sortable: true },
+          { id: 'estFuelWasteL', header: 'Desperdício', cell: (r) => `${r.estFuelWasteL} L`, sortable: true }
+        ],
+        async fetchPage({ page, pageSize }) {
+          const all = makeIdleRows(scopedVehicles, periodDays);
+          const total = all.length;
+          const start = (page - 1) * pageSize;
+          await sleep(120);
+          return { rows: all.slice(start, start + pageSize), total };
+        },
+        async exportAll() {
+          const all = makeIdleRows(scopedVehicles, periodDays);
+          downloadCsv('tempo_parado.csv', all);
+        }
+      },
+      {
+        id: 'maintenance',
+        title: 'Manutenção Preventiva',
+        subtitle: 'Proximidade da revisão e prioridade',
+        category: 'Manutenção',
+        estimateTotal: () => scopedVehicles.length,
+        columns: [
+          { id: 'plate', header: 'Veículo', sortable: true },
+          { id: 'fleet', header: 'Frota', sortable: true },
+          { id: 'nextServiceKm', header: 'Próx. revisão', cell: (r) => `${Number(r.nextServiceKm).toLocaleString('pt-BR')} km`, sortable: true },
+          {
+            id: 'priority',
+            header: 'Prioridade',
+            sortable: true,
+            cell: (r) => {
+              const cls = r.priority === 'Vencido' ? 'badge-danger' : r.priority === 'Urgente' ? 'badge-warning' : r.priority === 'Atenção' ? 'badge-info' : 'badge-success';
+              return <span className={`badge ${cls}`}>{r.priority}</span>;
+            }
+          }
+        ],
+        async fetchPage({ page, pageSize }) {
+          const all = makeMaintenanceRows(scopedVehicles);
+          const total = all.length;
+          const start = (page - 1) * pageSize;
+          await sleep(120);
+          return { rows: all.slice(start, start + pageSize), total };
+        },
+        async exportAll() {
+          const all = makeMaintenanceRows(scopedVehicles);
+          downloadCsv('manutencao_preventiva.csv', all);
+        }
+      },
+      {
+        id: 'geofence',
+        title: 'Cercas Virtuais (Geofence)',
+        subtitle: 'Entradas e saídas por área (carregamento paginado)',
+        category: 'Conformidade',
+        estimateTotal: () => scopedVehicles.length * Math.max(10, periodDays * 8),
+        columns: [
+          { id: 'when', header: 'Quando', sortable: true },
+          { id: 'plate', header: 'Veículo', sortable: true },
+          { id: 'fleet', header: 'Frota', sortable: true },
+          { id: 'geofence', header: 'Cerca', sortable: true },
+          { id: 'event', header: 'Evento', sortable: true }
+        ],
+        async fetchPage({ page, pageSize }) {
+          const fences = ['CD Principal', 'Zona Restrita', 'Filial Sul', 'Porto'];
+          const total = scopedVehicles.length * Math.max(10, periodDays * 8);
+          const start = (page - 1) * pageSize;
+          const rows = [];
+          for (let i = 0; i < pageSize; i += 1) {
+            const idx = start + i;
+            if (idx >= total) break;
+            const v = scopedVehicles[idx % scopedVehicles.length];
+            const h = hashToInt(`${v.id}:geo:${periodDays}:${idx}`);
+            rows.push({
+              plate: v.plate,
+              fleet: v.fleet,
+              when: `D-${(idx % periodDays) + 1} ${String((h % 24)).padStart(2, '0')}:${String((h % 60)).padStart(2, '0')}`,
+              geofence: fences[(h + idx) % fences.length],
+              event: ((h + idx) % 2) ? 'Entrada' : 'Saída'
+            });
+          }
+          await sleep(160);
+          return { rows, total };
+        },
+        async exportAll() {
+          const fences = ['CD Principal', 'Zona Restrita', 'Filial Sul', 'Porto'];
+          const total = scopedVehicles.length * Math.max(10, periodDays * 8);
+          const cap = Math.min(total, 5000);
+          const out = [];
+          for (let idx = 0; idx < cap; idx += 1) {
+            const v = scopedVehicles[idx % scopedVehicles.length];
+            const h = hashToInt(`${v.id}:geo:${periodDays}:${idx}`);
+            out.push({
+              plate: v.plate,
+              fleet: v.fleet,
+              when: `D-${(idx % periodDays) + 1} ${String((h % 24)).padStart(2, '0')}:${String((h % 60)).padStart(2, '0')}`,
+              geofence: fences[(h + idx) % fences.length],
+              event: ((h + idx) % 2) ? 'Entrada' : 'Saída'
+            });
+            if (idx > 0 && idx % 800 === 0) await sleep(0);
+          }
+          downloadCsv('cercas_virtuais.csv', out);
+        }
+      },
+      {
+        id: 'behavior',
+        title: 'Comportamento do Motorista',
+        subtitle: 'Frenagens/arrancadas/curvas bruscas e score',
+        category: 'Segurança',
+        estimateTotal: () => scopedVehicles.length,
+        columns: [
+          { id: 'plate', header: 'Veículo', sortable: true },
+          { id: 'fleet', header: 'Frota', sortable: true },
+          { id: 'harshBrake', header: 'Frenagens', sortable: true },
+          { id: 'harshAccel', header: 'Arrancadas', sortable: true },
+          { id: 'sharpTurn', header: 'Curvas', sortable: true },
+          {
+            id: 'safetyScore',
+            header: 'Score',
+            sortable: true,
+            cell: (r) => {
+              const cls = r.safetyScore >= 85 ? 'badge-success' : r.safetyScore >= 70 ? 'badge-warning' : 'badge-danger';
+              return <span className={`badge ${cls}`}>{r.safetyScore}</span>;
+            }
+          }
+        ],
+        async fetchPage({ page, pageSize }) {
+          const all = makeDriverBehaviorRows(scopedVehicles, periodDays);
+          const total = all.length;
+          const start = (page - 1) * pageSize;
+          await sleep(120);
+          return { rows: all.slice(start, start + pageSize), total };
+        },
+        async exportAll() {
+          const all = makeDriverBehaviorRows(scopedVehicles, periodDays);
+          downloadCsv('comportamento_motorista.csv', all);
+        }
+      },
+      {
+        id: 'positions',
+        title: 'Histórico de Posições (GPS)',
+        subtitle: 'Exemplo de relatório de alto volume (pontos GPS paginados)',
+        category: 'Rastreamento',
+        estimateTotal: () => scopedVehicles.length * Math.max(200, periodDays * 250),
+        columns: [
+          { id: 'when', header: 'Quando', sortable: true },
+          { id: 'plate', header: 'Veículo', sortable: true },
+          { id: 'fleet', header: 'Frota', sortable: true },
+          { id: 'lat', header: 'Lat' },
+          { id: 'lng', header: 'Lng' },
+          { id: 'speedKmh', header: 'Veloc.', cell: (r) => `${r.speedKmh} km/h`, sortable: true }
+        ],
+        async fetchPage({ page, pageSize }) {
+          const total = scopedVehicles.length * Math.max(200, periodDays * 250);
+          const start = (page - 1) * pageSize;
+          const rows = makePositionsRows(scopedVehicles, periodDays, start, Math.min(pageSize, Math.max(0, total - start)));
+          await sleep(180);
+          return { rows, total };
+        },
+        async exportAll() {
+          const total = scopedVehicles.length * Math.max(200, periodDays * 250);
+          const cap = Math.min(total, 8000);
+          const out = makePositionsRows(scopedVehicles, periodDays, 0, cap);
+          downloadCsv('historico_posicoes.csv', out);
+        }
+      }
+    ];
+  }, [scopedVehicles, periodDays]);
 
-  function scrollTo(id) {
-    const ref = refs[id];
-    if (!ref?.current) return;
-    ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const activeDef = useMemo(() => reportDefs.find((r) => r.id === activeId) || reportDefs[0], [reportDefs, activeId]);
+
+  function updateState(reportId, patch) {
+    setStates((s) => ({
+      ...s,
+      [reportId]: { ...s[reportId], ...patch }
+    }));
   }
+
+  async function loadActive() {
+    const id = activeDef.id;
+    const st = states[id];
+    updateState(id, { loading: true });
+
+    try {
+      const sort = normalizeSort(st.sort);
+      const res = await activeDef.fetchPage({
+        fleet,
+        periodDays,
+        page: st.page,
+        pageSize: st.pageSize,
+        search: st.search,
+        sort
+      });
+      updateState(id, { rows: res.rows, total: res.total, loading: false });
+    } catch {
+      updateState(id, { rows: [], total: 0, loading: false });
+    }
+  }
+
+  useEffect(() => {
+    // Carrega apenas o relatório selecionado.
+    loadActive();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId, fleet, periodDays]);
+
+  const activeState = states[activeDef.id];
+
+  const grouped = useMemo(() => {
+    const map = new Map();
+    for (const r of reportDefs) {
+      if (!map.has(r.category)) map.set(r.category, []);
+      map.get(r.category).push(r);
+    }
+    return Array.from(map.entries());
+  }, [reportDefs]);
 
   return (
     <section>
       <div className="card mb-4">
         <div className="card-header">
           <div className="card-title">Relatórios</div>
-          <div className="card-subtitle text-muted">Pré-visualização de dados, telemetria e exportação</div>
+          <div className="card-subtitle text-muted">Carregamento individual por relatório (preview paginado) + exportação</div>
         </div>
         <div className="card-body">
           <div className="form-row">
             <div className="col-md-4 mb-2">
               <label className="small text-muted" htmlFor="reportFleet">Frota</label>
-              <select id="reportFleet" className="form-control" value={fleet} onChange={(e) => setFleet(e.target.value)}>
+              <select id="reportFleet" className="form-control" value={fleet} onChange={(e) => { setFleet(e.target.value); }}>
                 <option value="">Todas</option>
                 {fleetOptions.map((f) => (
                   <option key={f} value={f}>{f}</option>
@@ -272,238 +652,102 @@ export default function ReportsPage({ vehicles }) {
               </select>
             </div>
             <div className="col-md-4 mb-2">
-              <label className="small text-muted">Atalhos</label>
-              <div className="d-flex flex-wrap gap-2">
-                <button className="btn btn-outline-secondary" type="button" onClick={() => scrollTo('telemetry')}>Telemetria</button>
-                <button className="btn btn-outline-secondary" type="button" onClick={() => scrollTo('trips')}>Viagens</button>
-                <button className="btn btn-outline-secondary" type="button" onClick={() => scrollTo('speeding')}>Velocidade</button>
-                <button className="btn btn-outline-secondary" type="button" onClick={() => scrollTo('fuel')}>Combustível</button>
+              <label className="small text-muted">Organização</label>
+              <div className="text-muted small">Selecione um relatório no catálogo abaixo para carregar.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="row">
+        <div className="col-lg-4">
+          <div className="card mb-4">
+            <div className="card-header">
+              <div className="card-title">Catálogo de Relatórios</div>
+              <div className="card-subtitle text-muted">Todos os tipos (carregam individualmente)</div>
+            </div>
+            <div className="card-body">
+              {grouped.map(([cat, items]) => (
+                <div key={cat} className="mb-3">
+                  <div className="text-muted small mb-2">{cat}</div>
+                  <div className="d-flex flex-wrap gap-2">
+                    {items.map((r) => {
+                      const active = r.id === activeDef.id;
+                      const total = r.estimateTotal();
+                      return (
+                        <button
+                          key={r.id}
+                          type="button"
+                          className={`btn btn-sm ${active ? 'btn-primary' : 'btn-outline-secondary'}`}
+                          onClick={() => setActiveId(r.id)}
+                        >
+                          {r.title}
+                          <span className="ml-1 text-muted" aria-hidden="true">({total.toLocaleString('pt-BR')})</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              <div className="text-muted small">
+                Nota: pré-visualização é paginada. Exportação de alto volume é limitada na demo para evitar travar o navegador.
               </div>
             </div>
           </div>
+        </div>
 
-          <hr className="my-3" />
+        <div className="col-lg-8">
+          <div className="card mb-4">
+            <div className="card-header">
+              <div className="card-title">{activeDef.title}</div>
+              <div className="card-subtitle text-muted">{activeDef.subtitle}</div>
+            </div>
+            <div className="card-body">
+              <div className="d-flex flex-wrap gap-2 mb-2">
+                <button
+                  className="btn btn-outline-secondary"
+                  type="button"
+                  onClick={() => loadActive()}
+                  disabled={activeState.loading}
+                >
+                  Recarregar
+                </button>
+                <button
+                  className="btn btn-outline-info"
+                  type="button"
+                  onClick={() => activeDef.exportAll()}
+                  disabled={activeState.loading}
+                >
+                  Exportar CSV
+                </button>
+              </div>
 
-          <div className="d-flex flex-wrap gap-2">
-            <button className="btn btn-outline-info" type="button" onClick={() => downloadCsv('telemetria_atual.csv', telemetryRows)}>
-              Exportar Telemetria (CSV)
-            </button>
-            <button className="btn btn-outline-info" type="button" onClick={() => downloadCsv('relatorio_viagens.csv', tripRows)}>
-              Exportar Viagens (CSV)
-            </button>
-            <button className="btn btn-outline-info" type="button" onClick={() => downloadCsv('eventos_velocidade.csv', speedingRows)}>
-              Exportar Eventos de Velocidade (CSV)
-            </button>
-            <button className="btn btn-outline-info" type="button" onClick={() => downloadCsv('consumo_combustivel.csv', fuelRows)}>
-              Exportar Consumo (CSV)
-            </button>
-            <button className="btn btn-outline-info" type="button" onClick={() => downloadCsv('tempo_parado.csv', idleRows)}>
-              Exportar Tempo Parado (CSV)
-            </button>
-            <button className="btn btn-outline-info" type="button" onClick={() => downloadCsv('manutencao_preventiva.csv', maintenanceRows)}>
-              Exportar Manutenção (CSV)
-            </button>
-            <button className="btn btn-outline-info" type="button" onClick={() => downloadCsv('cercas_virtuais.csv', geofenceRows)}>
-              Exportar Cercas Virtuais (CSV)
-            </button>
-            <button className="btn btn-outline-info" type="button" onClick={() => downloadCsv('comportamento_motorista.csv', behaviorRows)}>
-              Exportar Comportamento (CSV)
-            </button>
+              <DataTable
+                mode="server"
+                rows={activeState.rows}
+                totalRows={activeState.total}
+                page={activeState.page}
+                pageSize={activeState.pageSize}
+                search={activeState.search}
+                sort={activeState.sort}
+                loading={activeState.loading}
+                onPageChange={(p) => { updateState(activeDef.id, { page: p }); loadActive(); }}
+                onPageSizeChange={(n) => { updateState(activeDef.id, { pageSize: n, page: 1 }); loadActive(); }}
+                onSearchChange={(v) => { updateState(activeDef.id, { search: v, page: 1 }); loadActive(); }}
+                onSortChange={(s) => { updateState(activeDef.id, { sort: s, page: 1 }); loadActive(); }}
+                rowKey={(r, i) => `${activeDef.id}-${r.plate || ''}-${r.when || ''}-${i}`}
+                initialPageSize={10}
+                pageSizeOptions={[10, 25, 50]}
+                columns={activeDef.columns}
+                emptyText="Nenhum registro encontrado."
+              />
+
+              <div className="text-muted small mt-2">
+                Carregando somente o relatório selecionado. Para produção, use paginação/ordenação/busca no servidor e exportação assíncrona.
+              </div>
+            </div>
           </div>
-
-          <div className="text-muted small mt-2">
-            (demo) Dados gerados localmente para pré-visualização. Classes compatíveis com Bootstrap 4.
-          </div>
-        </div>
-      </div>
-
-      <div className="card mb-4" ref={refs.telemetry}>
-        <div className="card-header">
-          <div className="card-title">Telemetria Atual</div>
-          <div className="card-subtitle text-muted">Status de ignição, velocidade, RPM, combustível, temperatura, bateria e GPS</div>
-        </div>
-        <div className="card-body">
-          <DataTable
-            rows={telemetryRows}
-            rowKey={(r) => r.plate}
-            initialPageSize={6}
-            columns={[
-              { id: 'plate', header: 'Veículo', sortValue: (r) => r.plate },
-              { id: 'fleet', header: 'Frota', sortValue: (r) => r.fleet },
-              { id: 'ignition', header: 'Ignição', sortValue: (r) => r.ignition },
-              { id: 'speed', header: 'Veloc.', cell: (r) => `${r.speedKmh} km/h`, sortValue: (r) => r.speedKmh },
-              { id: 'rpm', header: 'RPM', cell: (r) => r.rpm.toLocaleString('pt-BR'), sortValue: (r) => r.rpm },
-              { id: 'fuel', header: 'Combustível', cell: (r) => formatPct(r.fuelPct), sortValue: (r) => r.fuelPct },
-              { id: 'coolant', header: 'Temp.', cell: (r) => `${r.coolantC}°C`, sortValue: (r) => r.coolantC },
-              { id: 'battery', header: 'Bateria', cell: (r) => `${r.batteryV} V`, sortValue: (r) => Number(r.batteryV) }
-            ]}
-          />
-        </div>
-      </div>
-
-      <div className="card mb-4" ref={refs.trips}>
-        <div className="card-header">
-          <div className="card-title">Relatório de Viagens</div>
-          <div className="card-subtitle text-muted">Resumo por veículo: número de viagens, distância, tempo em movimento e tempo parado</div>
-        </div>
-        <div className="card-body">
-          <DataTable
-            rows={tripRows}
-            rowKey={(r) => r.plate}
-            initialPageSize={6}
-            columns={[
-              { id: 'plate', header: 'Veículo', sortValue: (r) => r.plate },
-              { id: 'fleet', header: 'Frota', sortValue: (r) => r.fleet },
-              { id: 'trips', header: 'Viagens', sortValue: (r) => r.trips },
-              { id: 'distanceKm', header: 'Distância', cell: (r) => formatKm(r.distanceKm), sortValue: (r) => r.distanceKm },
-              { id: 'driveTime', header: 'Em movimento', sortValue: (r) => r.driveTime },
-              { id: 'idleTime', header: 'Parado', sortValue: (r) => r.idleTime }
-            ]}
-          />
-        </div>
-      </div>
-
-      <div className="card mb-4" ref={refs.speeding}>
-        <div className="card-header">
-          <div className="card-title">Eventos de Excesso de Velocidade</div>
-          <div className="card-subtitle text-muted">Lista de ocorrências com pico, limite e excesso</div>
-        </div>
-        <div className="card-body">
-          <DataTable
-            rows={speedingRows}
-            rowKey={(r, i) => `${r.plate}-${i}`}
-            initialPageSize={6}
-            columns={[
-              { id: 'plate', header: 'Veículo', sortValue: (r) => r.plate },
-              { id: 'fleet', header: 'Frota', sortValue: (r) => r.fleet },
-              { id: 'when', header: 'Quando', sortValue: (r) => r.when },
-              { id: 'speed', header: 'Pico', cell: (r) => `${r.speedKmh} km/h`, sortValue: (r) => r.speedKmh },
-              { id: 'limit', header: 'Limite', cell: (r) => `${r.limitKmh} km/h`, sortValue: (r) => r.limitKmh },
-              { id: 'excess', header: 'Excesso', cell: (r) => `${r.excessKmh} km/h`, sortValue: (r) => r.excessKmh }
-            ]}
-          />
-          <div className="text-muted small mt-2">Dica: use a busca e ordenação para localizar placas e picos.</div>
-        </div>
-      </div>
-
-      <div className="card mb-4" ref={refs.fuel}>
-        <div className="card-header">
-          <div className="card-title">Consumo de Combustível</div>
-          <div className="card-subtitle text-muted">Estimativa por veículo: distância, litros e média (L/100km)</div>
-        </div>
-        <div className="card-body">
-          <DataTable
-            rows={fuelRows}
-            rowKey={(r) => r.plate}
-            initialPageSize={6}
-            columns={[
-              { id: 'plate', header: 'Veículo', sortValue: (r) => r.plate },
-              { id: 'fleet', header: 'Frota', sortValue: (r) => r.fleet },
-              { id: 'distance', header: 'Distância', cell: (r) => formatKm(r.distanceKm), sortValue: (r) => r.distanceKm },
-              { id: 'fuel', header: 'Combustível', cell: (r) => formatL(r.fuelL), sortValue: (r) => r.fuelL },
-              { id: 'avg', header: 'Média', cell: (r) => `${r.avgLPer100Km} L/100km`, sortValue: (r) => Number(r.avgLPer100Km) }
-            ]}
-          />
-        </div>
-      </div>
-
-      <div className="card mb-4" ref={refs.idle}>
-        <div className="card-header">
-          <div className="card-title">Tempo Parado / Marcha Lenta</div>
-          <div className="card-subtitle text-muted">Tempo parado estimado, número de eventos e desperdício aproximado</div>
-        </div>
-        <div className="card-body">
-          <DataTable
-            rows={idleRows}
-            rowKey={(r) => r.plate}
-            initialPageSize={6}
-            columns={[
-              { id: 'plate', header: 'Veículo', sortValue: (r) => r.plate },
-              { id: 'fleet', header: 'Frota', sortValue: (r) => r.fleet },
-              { id: 'idleTime', header: 'Tempo parado', sortValue: (r) => r.idleTime },
-              { id: 'idleEvents', header: 'Eventos', sortValue: (r) => r.idleEvents },
-              { id: 'waste', header: 'Desperdício', cell: (r) => `${r.estFuelWasteL} L`, sortValue: (r) => r.estFuelWasteL }
-            ]}
-          />
-        </div>
-      </div>
-
-      <div className="card mb-4" ref={refs.maintenance}>
-        <div className="card-header">
-          <div className="card-title">Manutenção Preventiva</div>
-          <div className="card-subtitle text-muted">Proximidade da revisão (km) e prioridade</div>
-        </div>
-        <div className="card-body">
-          <DataTable
-            rows={maintenanceRows}
-            rowKey={(r) => r.plate}
-            initialPageSize={6}
-            columns={[
-              { id: 'plate', header: 'Veículo', sortValue: (r) => r.plate },
-              { id: 'fleet', header: 'Frota', sortValue: (r) => r.fleet },
-              { id: 'next', header: 'Próx. revisão', cell: (r) => `${r.nextServiceKm.toLocaleString('pt-BR')} km`, sortValue: (r) => r.nextServiceKm },
-              {
-                id: 'priority',
-                header: 'Prioridade',
-                cell: (r) => {
-                  const cls = r.priority === 'Vencido' ? 'badge-danger' : r.priority === 'Urgente' ? 'badge-warning' : r.priority === 'Atenção' ? 'badge-info' : 'badge-success';
-                  return <span className={`badge ${cls}`}>{r.priority}</span>;
-                },
-                sortValue: (r) => r.priority
-              }
-            ]}
-          />
-        </div>
-      </div>
-
-      <div className="card mb-4" ref={refs.geofence}>
-        <div className="card-header">
-          <div className="card-title">Cercas Virtuais (Geofence)</div>
-          <div className="card-subtitle text-muted">Entradas e saídas em áreas configuradas</div>
-        </div>
-        <div className="card-body">
-          <DataTable
-            rows={geofenceRows}
-            rowKey={(r, i) => `${r.plate}-${r.geofence}-${i}`}
-            initialPageSize={6}
-            columns={[
-              { id: 'when', header: 'Quando', sortValue: (r) => r.when },
-              { id: 'plate', header: 'Veículo', sortValue: (r) => r.plate },
-              { id: 'fleet', header: 'Frota', sortValue: (r) => r.fleet },
-              { id: 'geofence', header: 'Cerca', sortValue: (r) => r.geofence },
-              { id: 'event', header: 'Evento', sortValue: (r) => r.event }
-            ]}
-          />
-        </div>
-      </div>
-
-      <div className="card mb-4" ref={refs.behavior}>
-        <div className="card-header">
-          <div className="card-title">Comportamento do Motorista</div>
-          <div className="card-subtitle text-muted">Frenagens/arrancadas/curvas bruscas e score de segurança</div>
-        </div>
-        <div className="card-body">
-          <DataTable
-            rows={behaviorRows}
-            rowKey={(r) => r.plate}
-            initialPageSize={6}
-            columns={[
-              { id: 'plate', header: 'Veículo', sortValue: (r) => r.plate },
-              { id: 'fleet', header: 'Frota', sortValue: (r) => r.fleet },
-              { id: 'harshBrake', header: 'Frenagens', sortValue: (r) => r.harshBrake },
-              { id: 'harshAccel', header: 'Arrancadas', sortValue: (r) => r.harshAccel },
-              { id: 'sharpTurn', header: 'Curvas', sortValue: (r) => r.sharpTurn },
-              {
-                id: 'score',
-                header: 'Score',
-                cell: (r) => {
-                  const cls = r.safetyScore >= 85 ? 'badge-success' : r.safetyScore >= 70 ? 'badge-warning' : 'badge-danger';
-                  return <span className={`badge ${cls}`}>{r.safetyScore}</span>;
-                },
-                sortValue: (r) => r.safetyScore
-              }
-            ]}
-          />
         </div>
       </div>
     </section>
