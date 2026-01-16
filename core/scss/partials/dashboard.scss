@@ -5,9 +5,9 @@
 
 	body.sidebar-open{overflow:hidden}
 
-	.sidebar{position:fixed;left:0;top:0;bottom:0;width:min(86vw,320px);transform:translateX(-110%);transition:transform .2s ease;z-index:1040;display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;height:100vh;height:100dvh;padding:1rem;padding-top:max(1rem,env(safe-area-inset-top));padding-bottom:max(1rem,env(safe-area-inset-bottom))}
-	.sidebar-open .sidebar{transform:translateX(0)}
-	.sidebar-toggle{display:inline-flex}
+	.app-shell .sidebar{position:fixed;left:0;top:0;bottom:0;width:min(86vw,320px);transform:translateX(-110%);transition:transform .2s ease;z-index:1040;display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;height:100vh;height:100dvh;padding:1rem;padding-top:max(1rem,env(safe-area-inset-top));padding-bottom:max(1rem,env(safe-area-inset-bottom))}
+	body.sidebar-open .app-shell .sidebar{transform:translateX(0)}
+	.app-shell .sidebar-toggle{display:inline-flex}
 }
 
 .sidebar{position:sticky;top:0;align-self:start;height:100vh;padding:1rem;background:var(--acrylic);border-right:1px solid var(--stroke-1);backdrop-filter:blur(18px) saturate(1.25)}
