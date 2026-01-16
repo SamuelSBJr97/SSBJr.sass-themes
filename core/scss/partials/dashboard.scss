@@ -25,11 +25,8 @@
 .brand-subtitle{color:var(--muted);font-size:.8rem}
 
 .content{min-width:0}
-.topbar{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1rem;border-bottom:1px solid var(--stroke-1);background:var(--acrylic);backdrop-filter:blur(14px) saturate(1.2)}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1rem;border-bottom:1px solid var(--stroke-1);background:var(--acrylic);backdrop-filter:blur(14px) saturate(1.2);margin-bottom:var(--layout-content-top-padding)}
 .topbar-right{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:.5rem}
-
-// Espaçamento entre o topo (topbar) e o conteúdo principal
-.content > .container-fluid{padding-top:var(--layout-content-top-padding)}
 
 .footer{padding:1rem;border-top:1px solid var(--stroke-1);color:var(--muted)}
 
