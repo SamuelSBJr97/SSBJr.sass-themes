@@ -2,6 +2,45 @@
   const themeSelect = document.getElementById('theme');
   const themeLink = document.getElementById('theme-css');
 
+  // Sidebar (mobile)
+  const sidebar = document.querySelector('.sidebar');
+  const sidebarToggle = document.getElementById('btn-sidebar');
+  let sidebarBackdrop = document.querySelector('.sidebar-backdrop');
+
+  function isMobileNav() {
+    return !!(window.matchMedia && window.matchMedia('(max-width: 991px)').matches);
+  }
+
+  function openSidebar() {
+    if (!sidebar) return;
+    document.body.classList.add('sidebar-open');
+    if (sidebarToggle) sidebarToggle.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeSidebar() {
+    document.body.classList.remove('sidebar-open');
+    if (sidebarToggle) sidebarToggle.setAttribute('aria-expanded', 'false');
+  }
+
+  if (!sidebarBackdrop) {
+    sidebarBackdrop = document.createElement('div');
+    sidebarBackdrop.className = 'sidebar-backdrop';
+    sidebarBackdrop.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(sidebarBackdrop);
+  }
+
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', () => {
+      if (document.body.classList.contains('sidebar-open')) closeSidebar();
+      else openSidebar();
+    });
+  }
+
+  if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeSidebar);
+  window.addEventListener('resize', () => {
+    if (!isMobileNav()) closeSidebar();
+  });
+
   function getQueryParam(name) {
     try {
       return new URLSearchParams(window.location.search).get(name);
@@ -62,6 +101,52 @@
     });
   }
 
+  // DataTables
+  function initDataTables() {
+    if (!window.jQuery || !jQuery.fn || !jQuery.fn.DataTable) return;
+
+    jQuery('.js-datatable').each(function () {
+      const table = this;
+      const $table = jQuery(table);
+      const mode = ($table.data('dt') || 'standard').toString();
+
+      if (jQuery.fn.dataTable.isDataTable(table)) {
+        $table.DataTable().destroy();
+      }
+
+      const base = {
+        searching: false,
+        lengthChange: false,
+        language: {
+          emptyTable: '',
+          zeroRecords: '',
+          info: 'Mostrando _START_–_END_ de _TOTAL_',
+          infoEmpty: 'Sem dados',
+          paginate: { previous: 'Anterior', next: 'Próximo' }
+        }
+      };
+
+      const opts =
+        mode === 'summary'
+          ? {
+              ...base,
+              paging: false,
+              info: false,
+              ordering: false
+            }
+          : {
+              ...base,
+              paging: true,
+              pageLength: 6,
+              info: true,
+              ordering: true,
+              order: []
+            };
+
+      $table.DataTable(opts);
+    });
+  }
+
   // Flatpickr
   if (window.flatpickr) {
     flatpickr('.js-datetime', {
@@ -111,7 +196,11 @@
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     const modal = document.querySelector('.modal.show');
-    if (modal) closeModal(modal);
+    if (modal) {
+      closeModal(modal);
+      return;
+    }
+    if (document.body.classList.contains('sidebar-open')) closeSidebar();
   });
 
   // -------------------------
@@ -499,6 +588,7 @@
     renderEventsFull();
     renderRoutes();
     populateAlertVehicles();
+    initDataTables();
   }
 
   // Navegação
@@ -510,6 +600,7 @@
       if (view) {
         window.location.hash = view;
         setView(view);
+        if (isMobileNav()) closeSidebar();
       }
       return;
     }

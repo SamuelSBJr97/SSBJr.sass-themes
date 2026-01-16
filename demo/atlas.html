@@ -8,13 +8,14 @@
   <link id="theme-css" rel="stylesheet" href="assets/css/atlas.css" />
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-dt@1.13.8/css/jquery.dataTables.min.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
 </head>
 <body data-fixed-theme="atlas">
   <a class="sr-only sr-only-focusable" href="#main">Pular para conteúdo</a>
 
   <div class="app-shell">
-    <aside class="sidebar">
+    <aside id="app-sidebar" class="sidebar">
       <div class="sidebar-header">
         <div class="brand">
           <div class="brand-mark">STI</div>
@@ -42,6 +43,7 @@
     <div class="content">
       <header class="topbar">
         <div class="topbar-left">
+          <button id="btn-sidebar" class="btn btn-outline-secondary btn-sm sidebar-toggle" type="button" aria-label="Abrir menu" aria-controls="app-sidebar" aria-expanded="false">&#9776;</button>
           <div class="h5 mb-0">Dashboard — Rastreamento</div>
           <div class="text-muted small">Tema: Atlas (claro/tech)</div>
         </div>
@@ -94,7 +96,7 @@
                 </div>
                 <div class="card-body">
                   <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover js-datatable" data-dt="summary">
                       <thead>
                         <tr>
                           <th>Quando</th>
@@ -220,7 +222,7 @@
                   </form>
 
                   <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover js-datatable" data-dt="standard">
                       <thead>
                         <tr>
                           <th>Veículo</th>
@@ -248,7 +250,7 @@
             </div>
             <div class="card-body">
               <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover js-datatable" data-dt="standard">
                   <thead>
                     <tr>
                       <th>Rota</th>
@@ -273,7 +275,7 @@
             </div>
             <div class="card-body">
               <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover js-datatable" data-dt="standard">
                   <thead>
                     <tr>
                       <th>Quando</th>
@@ -438,8 +440,11 @@
     </div>
   </div>
 
+  <div class="sidebar-backdrop" aria-hidden="true"></div>
+
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/datatables.net@1.13.8/js/jquery.dataTables.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
   <script src="assets/js/app.js"></script>

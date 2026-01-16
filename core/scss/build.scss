@@ -124,8 +124,17 @@ $font-family-sans: "Segoe UI Variable", "Segoe UI", ui-sans-serif, system-ui, -a
   --elev-1: 0 1px 2px #{color.change(#000, $alpha: if($is-dark, 0.42, 0.12))}, 0 12px 32px #{color.change(#000, $alpha: if($is-dark, 0.44, 0.14))};
   --elev-2: 0 2px 4px #{color.change(#000, $alpha: if($is-dark, 0.48, 0.14))}, 0 22px 60px #{color.change(#000, $alpha: if($is-dark, 0.52, 0.18))};
 
-  --mica: linear-gradient(180deg, var(--text-soft-strong), var(--text-xxsoft)), var(--surface);
-  --acrylic: linear-gradient(180deg, var(--text-soft-strong), transparent 65%), var(--surface);
+  // Mica/Acrylic: evita “haze” claro demais no tema escuro
+  --mica: linear-gradient(
+    180deg,
+    #{color.change(if($is-dark, #ffffff, #000000), $alpha: if($is-dark, 0.06, 0.035))},
+    transparent 62%
+  ), var(--surface);
+  --acrylic: linear-gradient(
+    180deg,
+    #{color.change(if($is-dark, #ffffff, #000000), $alpha: if($is-dark, 0.085, 0.05))},
+    transparent 68%
+  ), var(--surface);
 }
 
 @import "partials/reboot";
@@ -142,6 +151,7 @@ $font-family-sans: "Segoe UI Variable", "Segoe UI", ui-sans-serif, system-ui, -a
 @import "partials/modal";
 
 @import "partials/select2";
+@import "partials/datatables";
 @import "partials/flatpickr";
 
 @import "partials/dashboard";
