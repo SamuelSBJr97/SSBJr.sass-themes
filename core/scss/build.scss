@@ -77,6 +77,8 @@ $font-family-sans: "Segoe UI Variable", "Segoe UI", ui-sans-serif, system-ui, -a
   --shadow-sm: #{sh("sm")};
   --shadow-md: #{sh("md")};
 
+  --layout-content-top-padding: 1rem;
+
   --font-sans: #{$font-family-sans};
 
   // Win11 / Fluent focus ring: duplo (mais "nítido" e consistente em dark/light)

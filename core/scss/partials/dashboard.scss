@@ -29,7 +29,7 @@
 .topbar-right{display:flex;align-items:center;flex-wrap:wrap;justify-content:flex-end;gap:.5rem}
 
 // Espaçamento entre o topo (topbar) e o conteúdo principal
-.content > .container-fluid{padding-top:1rem}
+.content > .container-fluid{padding-top:var(--layout-content-top-padding)}
 
 .footer{padding:1rem;border-top:1px solid var(--stroke-1);color:var(--muted)}
 
