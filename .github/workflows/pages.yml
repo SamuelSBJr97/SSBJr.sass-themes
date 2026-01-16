@@ -30,11 +30,16 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build Sass (themes + demo css)
-        run: npm run build
+      - name: Build (Sass + demo React)
+        run: npm run build:pages
 
-      - name: Build demo (React)
-        run: npm run build:demo
+      - name: Verify theme CSS in dist
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f demo/dist/assets/css/aurora.css
+          test -f demo/dist/assets/css/carbon.css
+          test -f demo/dist/assets/css/atlas.css
 
       - name: Assemble site into docs/
         shell: bash
