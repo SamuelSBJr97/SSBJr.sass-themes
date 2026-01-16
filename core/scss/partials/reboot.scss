@@ -3,7 +3,7 @@ html{font-family:var(--font-sans);line-height:1.5;-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--body-bg);color:var(--text);text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 a{color:var(--primary);text-decoration:none}
 a:hover{text-decoration:underline}
-hr{border:0;border-top:1px solid var(--border)}
+hr{border:0;border-top:1px solid var(--stroke-1)}
 img{max-width:100%;height:auto}
 button,input,select,textarea{font:inherit}
 

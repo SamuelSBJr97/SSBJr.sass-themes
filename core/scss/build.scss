@@ -24,9 +24,9 @@ $neutrals: (
 ) !default;
 
 $radius: (
-  "sm": 10px,
-  "md": 14px,
-  "lg": 18px
+  "sm": 8px,
+  "md": 12px,
+  "lg": 16px
 ) !default;
 
 $shadow: (
@@ -34,7 +34,7 @@ $shadow: (
   "md": 0 14px 38px rgba(0, 0, 0, 0.22)
 ) !default;
 
-$font-family-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji" !default;
+$font-family-sans: "Segoe UI Variable", "Segoe UI", ui-sans-serif, system-ui, -apple-system, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji" !default;
 
 @function c($key) {
   @return map.get($palette, $key);
@@ -79,7 +79,8 @@ $font-family-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, 
 
   --font-sans: #{$font-family-sans};
 
-  --focus-ring: 0 0 0 0.22rem #{color.change(c("primary"), $alpha: 0.25)};
+  // Win11 / Fluent focus ring: duplo (mais "nítido" e consistente em dark/light)
+  --focus-ring: 0 0 0 0.12rem #{color.change(c("primary"), $alpha: if($is-dark, 0.42, 0.32))}, 0 0 0 0.22rem #{color.change(c("primary"), $alpha: if($is-dark, 0.22, 0.18))};
 
   // Enterprise UI tokens (evitam hardcode de cores nos partials)
   --primary-soft: #{color.change(c("primary"), $alpha: 0.18)};
@@ -108,6 +109,23 @@ $font-family-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, 
   --text-xxsoft: #{color.change(n("text"), $alpha: if($is-dark, 0.03, 0.025))};
   --border-strong: #{color.change(n("text"), $alpha: if($is-dark, 0.26, 0.18))};
   --placeholder: #{color.change(n("muted"), $alpha: if($is-dark, 0.78, 0.82))};
+
+  // Win11 / Fluent tokens (camadas, strokes, elevação, mica/acrylic)
+  --layer-0: var(--body-bg);
+  --layer-1: var(--surface);
+  --layer-2: var(--surface-2);
+
+  --stroke-1: #{color.change(n("text"), $alpha: if($is-dark, 0.14, 0.10))};
+  --stroke-2: #{color.change(n("text"), $alpha: if($is-dark, 0.22, 0.14))};
+
+  --control-bg: #{color.mix(n("surface-2"), n("surface"), 50%)};
+  --control-bg-hover: #{color.mix(n("surface-2"), n("surface"), 35%)};
+
+  --elev-1: 0 1px 2px #{color.change(#000, $alpha: if($is-dark, 0.42, 0.12))}, 0 12px 32px #{color.change(#000, $alpha: if($is-dark, 0.44, 0.14))};
+  --elev-2: 0 2px 4px #{color.change(#000, $alpha: if($is-dark, 0.48, 0.14))}, 0 22px 60px #{color.change(#000, $alpha: if($is-dark, 0.52, 0.18))};
+
+  --mica: linear-gradient(180deg, var(--text-soft-strong), var(--text-xxsoft)), var(--surface);
+  --acrylic: linear-gradient(180deg, var(--text-soft-strong), transparent 65%), var(--surface);
 }
 
 @import "partials/reboot";
