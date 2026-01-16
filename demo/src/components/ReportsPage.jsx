@@ -1061,28 +1061,41 @@ export default function ReportsPage({ vehicles }) {
           <div className="card-subtitle text-muted">Carregamento individual por relatório (preview paginado) + exportação</div>
         </div>
         <div className="card-body">
-          <div className="form-row">
-            <div className="col-md-4 mb-2">
-              <label className="small text-muted" htmlFor="reportFleet">Frota</label>
-              <select id="reportFleet" className="form-control" value={fleet} onChange={(e) => { setFleet(e.target.value); }}>
-                <option value="">Todas</option>
-                {fleetOptions.map((f) => (
-                  <option key={f} value={f}>{f}</option>
-                ))}
-              </select>
-            </div>
-            <div className="col-md-4 mb-2">
-              <label className="small text-muted" htmlFor="reportPeriod">Período</label>
-              <select id="reportPeriod" className="form-control" value={periodDays} onChange={(e) => setPeriodDays(Number(e.target.value))}>
-                <option value={1}>Hoje</option>
-                <option value={7}>Últimos 7 dias</option>
-                <option value={15}>Últimos 15 dias</option>
-                <option value={30}>Últimos 30 dias</option>
-              </select>
-            </div>
-            <div className="col-md-4 mb-2">
-              <label className="small text-muted">Organização</label>
-              <div className="text-muted small">Selecione um relatório no catálogo abaixo para carregar.</div>
+          <div className="md-form">
+            <div className="form-row">
+              <div className="col-md-4">
+                <div className={`md-field ${fleet ? 'is-filled' : ''}`}>
+                  <select id="reportFleet" className="form-control" value={fleet} onChange={(e) => { setFleet(e.target.value); }}>
+                    <option value="">Todas</option>
+                    {fleetOptions.map((f) => (
+                      <option key={f} value={f}>{f}</option>
+                    ))}
+                  </select>
+                  <label htmlFor="reportFleet">Frota</label>
+                  <small className="md-helper">Escopo dos relatórios</small>
+                </div>
+              </div>
+
+              <div className="col-md-4">
+                <div className={`md-field ${periodDays ? 'is-filled' : ''}`}>
+                  <select id="reportPeriod" className="form-control" value={periodDays} onChange={(e) => setPeriodDays(Number(e.target.value))}>
+                    <option value={1}>Hoje</option>
+                    <option value={7}>Últimos 7 dias</option>
+                    <option value={15}>Últimos 15 dias</option>
+                    <option value={30}>Últimos 30 dias</option>
+                  </select>
+                  <label htmlFor="reportPeriod">Período</label>
+                  <small className="md-helper">Define o período de apuração</small>
+                </div>
+              </div>
+
+              <div className="col-md-4">
+                <div className="md-field is-filled">
+                  <input className="form-control" value="" placeholder=" " readOnly />
+                  <label>Organização</label>
+                  <small className="md-helper">Escolha tipo → relatório → aplique filtros</small>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1145,6 +1158,7 @@ export default function ReportsPage({ vehicles }) {
               <div className="mb-3">
                 <div className="text-muted small mb-2">Filtros do relatório</div>
                 <form
+                  className="md-form"
                   onSubmit={(e) => {
                     e.preventDefault();
                     updateState(activeDef.id, { page: 1 });
@@ -1157,35 +1171,41 @@ export default function ReportsPage({ vehicles }) {
 
                       if (field.type === 'select') {
                         return (
-                          <div key={field.id} className="col-md-4 mb-2">
-                            <label className="small text-muted" htmlFor={`rf-${field.id}`}>{field.label}</label>
-                            <select
-                              id={`rf-${field.id}`}
-                              className="form-control"
-                              value={value ?? ''}
-                              onChange={(ev) => setActiveFilter(field.id, ev.target.value)}
-                            >
-                              {(field.options || []).map((opt) => (
-                                <option key={String(opt.value)} value={opt.value}>{opt.label}</option>
-                              ))}
-                            </select>
+                          <div key={field.id} className="col-md-4">
+                            <div className={`md-field ${value !== '' && value != null ? 'is-filled' : ''}`}>
+                              <select
+                                id={`rf-${field.id}`}
+                                className="form-control"
+                                value={value ?? ''}
+                                onChange={(ev) => setActiveFilter(field.id, ev.target.value)}
+                              >
+                                {(field.options || []).map((opt) => (
+                                  <option key={String(opt.value)} value={opt.value}>{opt.label}</option>
+                                ))}
+                              </select>
+                              <label htmlFor={`rf-${field.id}`}>{field.label}</label>
+                              <small className="md-helper">Seleção</small>
+                            </div>
                           </div>
                         );
                       }
 
                       return (
-                        <div key={field.id} className="col-md-4 mb-2">
-                          <label className="small text-muted" htmlFor={`rf-${field.id}`}>{field.label}</label>
-                          <input
-                            id={`rf-${field.id}`}
-                            className="form-control"
-                            type="number"
-                            min={field.min}
-                            step={field.step}
-                            placeholder={field.placeholder}
-                            value={value ?? ''}
-                            onChange={(ev) => setActiveFilter(field.id, ev.target.value)}
-                          />
+                        <div key={field.id} className="col-md-4">
+                          <div className={`md-field ${value !== '' && value != null ? 'is-filled' : ''}`}>
+                            <input
+                              id={`rf-${field.id}`}
+                              className="form-control"
+                              type="number"
+                              min={field.min}
+                              step={field.step}
+                              placeholder=" "
+                              value={value ?? ''}
+                              onChange={(ev) => setActiveFilter(field.id, ev.target.value)}
+                            />
+                            <label htmlFor={`rf-${field.id}`}>{field.label}</label>
+                            <small className="md-helper">{field.placeholder || 'Filtro'}</small>
+                          </div>
                         </div>
                       );
                     })}

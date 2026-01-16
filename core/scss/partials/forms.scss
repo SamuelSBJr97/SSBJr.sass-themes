@@ -22,3 +22,16 @@ label{display:inline-block;margin-bottom:.25rem}
 
 .close{background:transparent;border:0;color:var(--muted);font-size:1.4rem;line-height:1;cursor:pointer}
 .close:hover{color:var(--text)}
+
+// Material-like (Google) form pattern (scoped)
+.md-form .md-field{position:relative;margin-bottom:.75rem}
+.md-form .md-field .form-control,.md-form .md-field .custom-select{padding:1.15rem .75rem .45rem;border-radius:10px;border:1px solid var(--stroke-2);box-shadow:none}
+.md-form .md-field .form-control:hover,.md-form .md-field .custom-select:hover{border-color:var(--primary-outline-strong)}
+.md-form .md-field .form-control:focus,.md-form .md-field .custom-select:focus{border-color:var(--primary);box-shadow:var(--focus-ring)}
+
+.md-form .md-field > label{position:absolute;left:.65rem;top:.78rem;margin:0;padding:0 .25rem;line-height:1.1;font-size:.9rem;color:var(--muted);background:var(--control-bg);pointer-events:none;transform-origin:left top;transition:transform .12s ease, top .12s ease, color .12s ease, opacity .12s ease}
+
+.md-form .md-field.is-filled > label,.md-form .md-field .form-control:focus + label,.md-form .md-field .custom-select:focus + label,.md-form .md-field .form-control:not(:placeholder-shown) + label{top:.22rem;transform:scale(.82);color:var(--primary)}
+
+.md-form .md-field .md-helper{display:block;margin-top:.25rem;font-size:.75rem;color:var(--muted)}
+.md-form .md-field .form-control:focus ~ .md-helper,.md-form .md-field .custom-select:focus ~ .md-helper{color:var(--primary)}
