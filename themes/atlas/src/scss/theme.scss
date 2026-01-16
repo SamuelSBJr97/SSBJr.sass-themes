@@ -26,7 +26,7 @@ $shadow: (
   "md": 0 24px 70px rgba(11, 18, 32, 0.18)
 );
 
-@use "../../../core/scss/build" with (
+@use "../../../../core/scss/build" with (
   $theme-id: $theme-id,
   $theme-name: $theme-name,
   $is-dark: $is-dark,
