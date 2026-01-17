@@ -1041,9 +1041,21 @@ export default function ReportsPage({ vehicles }) {
     return reportDefs.filter((r) => r.category === activeCategory);
   }, [reportDefs, activeCategory]);
 
+  function setCategory(cat) {
+    if (cat === activeCategory) return;
+    setActiveCategory(cat);
+    // Ao trocar a categoria, limpa o relatório atual e exige novo "Aplicar".
+    setHasApplied(false);
+    updateState(activeDef.id, { rows: [], total: 0, loading: false, page: 1 });
+  }
+
   function setActiveReport(id) {
+    if (id === activeId) return;
     const def = reportDefs.find((r) => r.id === id);
     if (def?.category) setActiveCategory(def.category);
+    // Ao trocar o relatório, limpa os dados e exige novo "Aplicar".
+    setHasApplied(false);
+    updateState(id, { rows: [], total: 0, loading: false, page: 1 });
     setActiveId(id);
   }
 
@@ -1074,7 +1086,7 @@ export default function ReportsPage({ vehicles }) {
                     key={cat}
                     type="button"
                     className={`btn btn-sm ${cat === activeCategory ? 'btn-primary' : 'btn-outline-secondary'}`}
-                    onClick={() => setActiveCategory(cat)}
+                    onClick={() => setCategory(cat)}
                   >
                     {cat}
                   </button>
