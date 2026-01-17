@@ -42,6 +42,11 @@ function getFixedTheme() {
   return t ? String(t) : null;
 }
 
+function getFixedUi() {
+  const u = document.body?.getAttribute('data-fixed-ui');
+  return u ? String(u) : null;
+}
+
 function getInitialTheme() {
   const queryTheme = getQueryParam('theme');
   if (queryTheme) return queryTheme;
@@ -65,6 +70,9 @@ function getInitialTheme() {
 function getInitialUi() {
   const queryUi = getQueryParam('ui');
   if (queryUi) return queryUi;
+
+  const fixed = getFixedUi();
+  if (fixed) return fixed;
 
   const meta = getMeta('demo-ui');
   if (meta) return meta;
@@ -188,6 +196,7 @@ function vehicleSearchText(v) {
 
 export default function App() {
   const fixedTheme = useMemo(() => getFixedTheme(), []);
+  const fixedUi = useMemo(() => getFixedUi(), []);
   const [theme, setTheme] = useState(() => getInitialTheme());
   const [ui, setUi] = useState(() => getInitialUi());
 
@@ -210,8 +219,8 @@ export default function App() {
   }, [theme, fixedTheme]);
 
   useEffect(() => {
-    applyUi(ui, { persist: true });
-  }, [ui]);
+    applyUi(ui, { persist: !fixedUi });
+  }, [ui, fixedUi]);
 
   useEffect(() => {
     if (!sidebarOpen) return;
@@ -380,6 +389,7 @@ export default function App() {
                   className="custom-select custom-select-sm"
                   value={ui}
                   onChange={(e) => setUi(e.target.value)}
+                  disabled={!!fixedUi}
                 >
                   <option value="fluid">Fluid</option>
                   <option value="material">Material</option>
