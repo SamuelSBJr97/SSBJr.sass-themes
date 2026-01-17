@@ -248,6 +248,9 @@ function includesText(value, q) {
 export default function ReportsPage({ vehicles }) {
   const [periodDays, setPeriodDays] = useState(7);
   const [fleet, setFleet] = useState('');
+  const [draftPeriodDays, setDraftPeriodDays] = useState(7);
+  const [draftFleet, setDraftFleet] = useState('');
+  const [hasApplied, setHasApplied] = useState(false);
   const [activeId, setActiveId] = useState('telemetry');
   const [activeCategory, setActiveCategory] = useState('Rastreamento');
 
@@ -985,10 +988,11 @@ export default function ReportsPage({ vehicles }) {
     }));
   }
 
-  async function loadActive() {
+  async function loadActive(overrides = {}) {
+    if (!hasApplied) return;
     const id = activeDef.id;
-    const st = states[id];
-    updateState(id, { loading: true });
+    const st = { ...states[id], ...overrides };
+    updateState(id, { ...overrides, loading: true });
 
     try {
       const sort = normalizeSort(st.sort);
@@ -1008,10 +1012,11 @@ export default function ReportsPage({ vehicles }) {
   }
 
   useEffect(() => {
-    // Carrega apenas o relatório selecionado.
+    // Carrega apenas o relatório selecionado (depois que o usuário aplicar filtros).
+    if (!hasApplied) return;
     loadActive();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeId, fleet, periodDays]);
+  }, [activeId, fleet, periodDays, hasApplied]);
 
   useEffect(() => {
     if (activeDef?.category && activeCategory !== activeDef.category) {
@@ -1050,7 +1055,7 @@ export default function ReportsPage({ vehicles }) {
 
   function resetActiveFilters() {
     updateState(activeDef.id, { filters: activeDef.defaultFilters, page: 1 });
-    loadActive();
+    if (hasApplied) loadActive({ filters: activeDef.defaultFilters, page: 1 });
   }
 
   return (
@@ -1126,8 +1131,13 @@ export default function ReportsPage({ vehicles }) {
                 <div className="md-form">
                   <div className="form-row">
                     <div className="col-md-6">
-                      <div className={`md-field ${fleet ? 'is-filled' : ''}`}>
-                        <select id="reportFleet" className="form-control" value={fleet} onChange={(e) => { setFleet(e.target.value); }}>
+                      <div className={`md-field ${draftFleet ? 'is-filled' : ''}`}>
+                        <select
+                          id="reportFleet"
+                          className="form-control"
+                          value={draftFleet}
+                          onChange={(e) => { setDraftFleet(e.target.value); }}
+                        >
                           <option value="">Todas</option>
                           {fleetOptions.map((f) => (
                             <option key={f} value={f}>{f}</option>
@@ -1139,8 +1149,13 @@ export default function ReportsPage({ vehicles }) {
                     </div>
 
                     <div className="col-md-6">
-                      <div className={`md-field ${periodDays ? 'is-filled' : ''}`}>
-                        <select id="reportPeriod" className="form-control" value={periodDays} onChange={(e) => setPeriodDays(Number(e.target.value))}>
+                      <div className={`md-field ${draftPeriodDays ? 'is-filled' : ''}`}>
+                        <select
+                          id="reportPeriod"
+                          className="form-control"
+                          value={draftPeriodDays}
+                          onChange={(e) => setDraftPeriodDays(Number(e.target.value))}
+                        >
                           <option value={1}>Hoje</option>
                           <option value={7}>Últimos 7 dias</option>
                           <option value={15}>Últimos 15 dias</option>
@@ -1160,8 +1175,15 @@ export default function ReportsPage({ vehicles }) {
                   className="md-form"
                   onSubmit={(e) => {
                     e.preventDefault();
-                    updateState(activeDef.id, { page: 1 });
-                    loadActive();
+                    const sameScope = draftFleet === fleet && draftPeriodDays === periodDays;
+
+                    updateState(activeDef.id, sameScope ? { page: 1 } : { page: 1, rows: [], total: 0 });
+                    setHasApplied(true);
+                    setFleet(draftFleet);
+                    setPeriodDays(draftPeriodDays);
+
+                    // Se o escopo não mudou, podemos recarregar imediatamente.
+                    if (sameScope) loadActive({ page: 1 });
                   }}
                 >
                   <div className="form-row">
@@ -1217,14 +1239,14 @@ export default function ReportsPage({ vehicles }) {
                     <button className="btn btn-outline-secondary" type="button" onClick={() => resetActiveFilters()} disabled={activeState.loading}>
                       Limpar filtros
                     </button>
-                    <button className="btn btn-outline-secondary" type="button" onClick={() => loadActive()} disabled={activeState.loading}>
+                    <button className="btn btn-outline-secondary" type="button" onClick={() => loadActive()} disabled={!hasApplied || activeState.loading}>
                       Recarregar
                     </button>
                     <button
                       className="btn btn-outline-info"
                       type="button"
                       onClick={() => activeDef.exportAll({ search: activeState.search, filters: activeState.filters })}
-                      disabled={activeState.loading}
+                      disabled={!hasApplied || activeState.loading}
                     >
                       Exportar CSV
                     </button>
@@ -1240,25 +1262,31 @@ export default function ReportsPage({ vehicles }) {
               <div className="card-subtitle text-muted">Pré-visualização paginada</div>
             </div>
             <div className="card-body">
-              <DataTable
-                mode="server"
-                rows={activeState.rows}
-                totalRows={activeState.total}
-                page={activeState.page}
-                pageSize={activeState.pageSize}
-                search={activeState.search}
-                sort={activeState.sort}
-                loading={activeState.loading}
-                onPageChange={(p) => { updateState(activeDef.id, { page: p }); loadActive(); }}
-                onPageSizeChange={(n) => { updateState(activeDef.id, { pageSize: n, page: 1 }); loadActive(); }}
-                onSearchChange={(v) => { updateState(activeDef.id, { search: v, page: 1 }); loadActive(); }}
-                onSortChange={(s) => { updateState(activeDef.id, { sort: s, page: 1 }); loadActive(); }}
-                rowKey={(r, i) => `${activeDef.id}-${r.plate || ''}-${r.when || ''}-${i}`}
-                initialPageSize={10}
-                pageSizeOptions={[10, 25, 50]}
-                columns={activeDef.columns}
-                emptyText="Nenhum registro encontrado."
-              />
+              {!hasApplied ? (
+                <div className="alert alert-info mb-0">
+                  Aplique os filtros para exibir os dados do relatório.
+                </div>
+              ) : (
+                <DataTable
+                  mode="server"
+                  rows={activeState.rows}
+                  totalRows={activeState.total}
+                  page={activeState.page}
+                  pageSize={activeState.pageSize}
+                  search={activeState.search}
+                  sort={activeState.sort}
+                  loading={activeState.loading}
+                  onPageChange={(p) => loadActive({ page: p })}
+                  onPageSizeChange={(n) => loadActive({ pageSize: n, page: 1 })}
+                  onSearchChange={(v) => loadActive({ search: v, page: 1 })}
+                  onSortChange={(s) => loadActive({ sort: s, page: 1 })}
+                  rowKey={(r, i) => `${activeDef.id}-${r.plate || ''}-${r.when || ''}-${i}`}
+                  initialPageSize={10}
+                  pageSizeOptions={[10, 25, 50]}
+                  columns={activeDef.columns}
+                  emptyText="Nenhum registro encontrado."
+                />
+              )}
 
               <div className="text-muted small mt-2">
                 Carrega somente o relatório selecionado. Em produção, isso viria do backend.
