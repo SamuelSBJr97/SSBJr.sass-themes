@@ -1,0 +1,36 @@
+name: Build Windows Desktop (EXE)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Windows EXE (Electron)
+        run: npm run desktop:dist:win
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SSBJr-Dashboard-Demo-windows
+          path: |
+            desktop/dist/*.exe

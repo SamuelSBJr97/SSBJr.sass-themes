@@ -12,7 +12,10 @@
     "build:demo": "vite build --config demo/vite.config.js",
     "build:pages": "npm run build && npm run build:demo",
     "dev": "npm run build && vite --config demo/vite.config.js --port 5173",
-    "start": "npm run dev"
+    "start": "npm run dev",
+    "desktop:dev": "npm run build:pages && electron desktop/main.cjs",
+    "desktop:dist": "npm run build:pages && electron-builder",
+    "desktop:dist:win": "npm run build:pages && electron-builder --win --x64"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -24,6 +27,32 @@
     "@vitejs/plugin-react": "^4.3.4",
     "http-server": "^14.1.1",
     "sass": "^1.70.0",
-    "vite": "^5.4.11"
+    "vite": "^5.4.11",
+    "vite-plugin-pwa": "^0.21.0",
+    "electron": "^30.0.9",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.ssbjr.sass-themes.demo",
+    "productName": "SSBJr Dashboard Demo",
+    "directories": {
+      "output": "desktop/dist"
+    },
+    "files": [
+      "desktop/**/*",
+      "demo/dist/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "desktop/main.cjs"
+    },
+    "win": {
+      "target": [
+        "portable"
+      ]
+    },
+    "portable": {
+      "artifactName": "SSBJr-Dashboard-Demo-Windows-${version}.exe"
+    }
   }
 }

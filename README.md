@@ -50,3 +50,19 @@ O workflow [ .github/workflows/pages.yml ] compila o Sass, builda o demo React e
 
 - Apenas temas (gera CSS em `themes/*/dist` e `demo/public/assets/css`): `npm run build`
 - Site completo (temas + demo React): `npm run build:pages`
+
+## PWA
+
+O demo está preparado como **PWA** (manifest + service worker) via Vite.
+
+- Build: `npm run build:pages`
+- Em produção (ex.: GitHub Pages), o navegador deve oferecer **Instalar app**.
+
+## Executável Windows (Desktop)
+
+Há um empacotamento opcional via **Electron** (wrapper do `demo/dist`).
+
+- Dev (abre a versão empacotada local): `npm run desktop:dev`
+- Build EXE (Windows): `npm run desktop:dist:win`
+
+GitHub Actions: workflow `.github/workflows/windows-desktop.yml` gera um `.exe` como artifact.
