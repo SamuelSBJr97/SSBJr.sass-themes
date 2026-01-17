@@ -1055,61 +1055,15 @@ export default function ReportsPage({ vehicles }) {
 
   return (
     <section>
-      <div className="card mb-4">
-        <div className="card-header">
-          <div className="card-title">Relatórios</div>
-          <div className="card-subtitle text-muted">Carregamento individual por relatório (preview paginado) + exportação</div>
-        </div>
-        <div className="card-body">
-          <div className="md-form">
-            <div className="form-row">
-              <div className="col-md-4">
-                <div className={`md-field ${fleet ? 'is-filled' : ''}`}>
-                  <select id="reportFleet" className="form-control" value={fleet} onChange={(e) => { setFleet(e.target.value); }}>
-                    <option value="">Todas</option>
-                    {fleetOptions.map((f) => (
-                      <option key={f} value={f}>{f}</option>
-                    ))}
-                  </select>
-                  <label htmlFor="reportFleet">Frota</label>
-                  <small className="md-helper">Escopo dos relatórios</small>
-                </div>
-              </div>
-
-              <div className="col-md-4">
-                <div className={`md-field ${periodDays ? 'is-filled' : ''}`}>
-                  <select id="reportPeriod" className="form-control" value={periodDays} onChange={(e) => setPeriodDays(Number(e.target.value))}>
-                    <option value={1}>Hoje</option>
-                    <option value={7}>Últimos 7 dias</option>
-                    <option value={15}>Últimos 15 dias</option>
-                    <option value={30}>Últimos 30 dias</option>
-                  </select>
-                  <label htmlFor="reportPeriod">Período</label>
-                  <small className="md-helper">Define o período de apuração</small>
-                </div>
-              </div>
-
-              <div className="col-md-4">
-                <div className="md-field is-filled">
-                  <input className="form-control" value="" placeholder=" " readOnly />
-                  <label>Organização</label>
-                  <small className="md-helper">Escolha tipo → relatório → aplique filtros</small>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="row">
-        <div className="col-lg-4">
+        <div className="col-lg-3">
           <div className="card mb-4">
             <div className="card-header">
-              <div className="card-title">Tipos de relatórios</div>
-              <div className="card-subtitle text-muted">Escolha o tipo e depois o relatório</div>
+              <div className="card-title">1) Tipo de relatório</div>
+              <div className="card-subtitle text-muted">Selecione a categoria</div>
             </div>
             <div className="card-body">
-              <div className="d-flex flex-wrap gap-2 mb-3">
+              <div className="d-flex flex-wrap gap-2">
                 {categories.map((cat) => (
                   <button
                     key={cat}
@@ -1121,12 +1075,20 @@ export default function ReportsPage({ vehicles }) {
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
 
-              <div className="text-muted small mb-2">Relatórios</div>
+        <div className="col-lg-3">
+          <div className="card mb-4">
+            <div className="card-header">
+              <div className="card-title">2) Relatórios</div>
+              <div className="card-subtitle text-muted">Do tipo selecionado</div>
+            </div>
+            <div className="card-body">
               <div className="d-flex flex-wrap gap-2">
                 {reportsInCategory.map((r) => {
                   const active = r.id === activeDef.id;
-                  const total = r.estimateTotal();
                   return (
                     <button
                       key={r.id}
@@ -1135,26 +1097,63 @@ export default function ReportsPage({ vehicles }) {
                       onClick={() => setActiveReport(r.id)}
                     >
                       {r.title}
-                      <span className="ml-1 text-muted" aria-hidden="true">({total.toLocaleString('pt-BR')})</span>
                     </button>
                   );
                 })}
               </div>
 
-              <div className="text-muted small">
-                Nota: pré-visualização é paginada. Exportação de alto volume é limitada na demo para evitar travar o navegador.
+              <div className="text-muted small mt-2">
+                Pré-visualização paginada e export limitado na demo.
               </div>
             </div>
           </div>
         </div>
 
-        <div className="col-lg-8">
+        <div className="col-lg-6">
           <div className="card mb-4">
             <div className="card-header">
-              <div className="card-title">{activeDef.title}</div>
-              <div className="card-subtitle text-muted">{activeDef.subtitle}</div>
+              <div className="card-title">3) Relatório</div>
+              <div className="card-subtitle text-muted">Filtro + dados</div>
             </div>
             <div className="card-body">
+              <div className="mb-3">
+                <div className="font-weight-bold">{activeDef.title}</div>
+                <div className="text-muted small">{activeDef.subtitle}</div>
+              </div>
+
+              <div className="mb-3">
+                <div className="text-muted small mb-2">Escopo</div>
+                <div className="md-form">
+                  <div className="form-row">
+                    <div className="col-md-6">
+                      <div className={`md-field ${fleet ? 'is-filled' : ''}`}>
+                        <select id="reportFleet" className="form-control" value={fleet} onChange={(e) => { setFleet(e.target.value); }}>
+                          <option value="">Todas</option>
+                          {fleetOptions.map((f) => (
+                            <option key={f} value={f}>{f}</option>
+                          ))}
+                        </select>
+                        <label htmlFor="reportFleet">Frota</label>
+                        <small className="md-helper">Escopo dos dados</small>
+                      </div>
+                    </div>
+
+                    <div className="col-md-6">
+                      <div className={`md-field ${periodDays ? 'is-filled' : ''}`}>
+                        <select id="reportPeriod" className="form-control" value={periodDays} onChange={(e) => setPeriodDays(Number(e.target.value))}>
+                          <option value={1}>Hoje</option>
+                          <option value={7}>Últimos 7 dias</option>
+                          <option value={15}>Últimos 15 dias</option>
+                          <option value={30}>Últimos 30 dias</option>
+                        </select>
+                        <label htmlFor="reportPeriod">Período</label>
+                        <small className="md-helper">Período de apuração</small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="mb-3">
                 <div className="text-muted small mb-2">Filtros do relatório</div>
                 <form
@@ -1171,7 +1170,7 @@ export default function ReportsPage({ vehicles }) {
 
                       if (field.type === 'select') {
                         return (
-                          <div key={field.id} className="col-md-4">
+                          <div key={field.id} className="col-md-6">
                             <div className={`md-field ${value !== '' && value != null ? 'is-filled' : ''}`}>
                               <select
                                 id={`rf-${field.id}`}
@@ -1191,7 +1190,7 @@ export default function ReportsPage({ vehicles }) {
                       }
 
                       return (
-                        <div key={field.id} className="col-md-4">
+                        <div key={field.id} className="col-md-6">
                           <div className={`md-field ${value !== '' && value != null ? 'is-filled' : ''}`}>
                             <input
                               id={`rf-${field.id}`}
@@ -1218,29 +1217,29 @@ export default function ReportsPage({ vehicles }) {
                     <button className="btn btn-outline-secondary" type="button" onClick={() => resetActiveFilters()} disabled={activeState.loading}>
                       Limpar filtros
                     </button>
+                    <button className="btn btn-outline-secondary" type="button" onClick={() => loadActive()} disabled={activeState.loading}>
+                      Recarregar
+                    </button>
+                    <button
+                      className="btn btn-outline-info"
+                      type="button"
+                      onClick={() => activeDef.exportAll({ search: activeState.search, filters: activeState.filters })}
+                      disabled={activeState.loading}
+                    >
+                      Exportar CSV
+                    </button>
                   </div>
                 </form>
               </div>
+            </div>
+          </div>
 
-              <div className="d-flex flex-wrap gap-2 mb-2">
-                <button
-                  className="btn btn-outline-secondary"
-                  type="button"
-                  onClick={() => loadActive()}
-                  disabled={activeState.loading}
-                >
-                  Recarregar
-                </button>
-                <button
-                  className="btn btn-outline-info"
-                  type="button"
-                  onClick={() => activeDef.exportAll({ search: activeState.search, filters: activeState.filters })}
-                  disabled={activeState.loading}
-                >
-                  Exportar CSV
-                </button>
-              </div>
-
+          <div className="card mb-4">
+            <div className="card-header">
+              <div className="card-title">Dados</div>
+              <div className="card-subtitle text-muted">Pré-visualização paginada</div>
+            </div>
+            <div className="card-body">
               <DataTable
                 mode="server"
                 rows={activeState.rows}
@@ -1262,7 +1261,7 @@ export default function ReportsPage({ vehicles }) {
               />
 
               <div className="text-muted small mt-2">
-                Carregando somente o relatório selecionado. Para produção, use paginação/ordenação/busca no servidor e exportação assíncrona.
+                Carrega somente o relatório selecionado. Em produção, isso viria do backend.
               </div>
             </div>
           </div>
