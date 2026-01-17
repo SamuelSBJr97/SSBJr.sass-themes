@@ -2,6 +2,7 @@
 // Ative via: <html data-ui="fluid|material|cupertino">
 
 @use "sass:map";
+@use "sass:string";
 
 $ui-vars: (
   "fluid": (
@@ -10,18 +11,18 @@ $ui-vars: (
     "radius-sm": 10px,
     "radius-md": 14px,
     "radius-lg": 20px,
-    "elev-1": 0 1px 2px rgba(0,0,0,.16), 0 16px 44px rgba(0,0,0,.16),
-    "elev-2": 0 2px 4px rgba(0,0,0,.18), 0 28px 78px rgba(0,0,0,.22)
+    "elev-1": string.unquote("0 1px 2px rgba(0,0,0,.16), 0 16px 44px rgba(0,0,0,.16)"),
+    "elev-2": string.unquote("0 2px 4px rgba(0,0,0,.18), 0 28px 78px rgba(0,0,0,.22)")
   ),
   "material": (
     "radius-sm": 6px,
     "radius-md": 10px,
     "radius-lg": 16px,
-    "focus-ring": 0 0 0 0.12rem rgba(0,0,0,0), 0 0 0 0.22rem var(--primary-soft-strong),
+    "focus-ring": string.unquote("0 0 0 0.12rem rgba(0,0,0,0), 0 0 0 0.22rem var(--primary-soft-strong)"),
     "shadow-sm": 0 2px 10px rgba(0,0,0,.16),
     "shadow-md": 0 10px 30px rgba(0,0,0,.20),
-    "elev-1": 0 1px 2px rgba(0,0,0,.16),0 8px 20px rgba(0,0,0,.12),
-    "elev-2": 0 2px 4px rgba(0,0,0,.18),0 18px 44px rgba(0,0,0,.16),
+    "elev-1": string.unquote("0 1px 2px rgba(0,0,0,.16), 0 8px 20px rgba(0,0,0,.12)"),
+    "elev-2": string.unquote("0 2px 4px rgba(0,0,0,.18), 0 18px 44px rgba(0,0,0,.16)"),
     "mica": var(--surface),
     "acrylic": var(--surface),
     "control-bg": var(--surface),
@@ -32,11 +33,11 @@ $ui-vars: (
     "radius-sm": 10px,
     "radius-md": 14px,
     "radius-lg": 20px,
-    "focus-ring": 0 0 0 0.12rem rgba(0,0,0,0), 0 0 0 0.24rem var(--primary-outline-strong),
+    "focus-ring": string.unquote("0 0 0 0.12rem rgba(0,0,0,0), 0 0 0 0.24rem var(--primary-outline-strong)"),
     "shadow-sm": 0 10px 26px rgba(0,0,0,.10),
     "shadow-md": 0 18px 54px rgba(0,0,0,.16),
-    "elev-1": 0 10px 26px rgba(0,0,0,.12),
-    "elev-2": 0 18px 54px rgba(0,0,0,.18),
+    "elev-1": string.unquote("0 10px 26px rgba(0,0,0,.12)"),
+    "elev-2": string.unquote("0 18px 54px rgba(0,0,0,.18)"),
     "control-bg": var(--surface),
     "control-bg-hover": var(--surface-2)
   )
