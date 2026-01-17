@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import DataTable from './components/DataTable.jsx';
 import ReportsPage from './components/ReportsPage.jsx';
+import Swal from 'sweetalert2';
+import toastr from 'toastr';
 
 const VEHICLES = [
   { id: 'v1', plate: 'ABC-1234', kind: 'Caminhão', group: 'Grupo Norte', fleet: 'Operação SP', driver: 'Marcos Lima', status: 'online', state: 'Em rota', speedKmh: 62, lastSignalSec: 15, distanceTodayKm: 182, fuelTodayL: 48, idleMin: 22 },
@@ -215,6 +217,18 @@ export default function App() {
   const selectedVehicle = useMemo(() => VEHICLES.find((v) => v.id === vehicleModalId) || null, [vehicleModalId]);
 
   useEffect(() => {
+    toastr.options = {
+      positionClass: 'toast-top-right',
+      timeOut: 2600,
+      extendedTimeOut: 1200,
+      closeButton: true,
+      progressBar: true,
+      newestOnTop: true,
+      preventDuplicates: true
+    };
+  }, []);
+
+  useEffect(() => {
     applyTheme(theme, { persist: !fixedTheme, locked: !!fixedTheme });
   }, [theme, fixedTheme]);
 
@@ -289,6 +303,24 @@ export default function App() {
     setVehicleModalOpen(true);
   }
 
+  async function createAlertFlow() {
+    const v = VEHICLES.find((x) => x.id === 'v1');
+    const plate = v ? v.plate : 'veículo selecionado';
+
+    const res = await Swal.fire({
+      title: 'Criar alerta',
+      text: `Deseja criar um alerta para ${plate}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Continuar',
+      cancelButtonText: 'Cancelar'
+    });
+
+    if (!res.isConfirmed) return;
+    openVehicle('v1');
+    toastr.info('Preencha os dados do alerta e salve.');
+  }
+
   function exportVehiclesCsv() {
     const rows = filteredVehicles.map((v) => ({
       plate: v.plate,
@@ -317,6 +349,8 @@ export default function App() {
     a.remove();
 
     URL.revokeObjectURL(url);
+
+    toastr.success('CSV exportado: veiculos.csv');
   }
 
   return (
@@ -400,7 +434,7 @@ export default function App() {
               <button className="btn btn-outline-secondary btn-sm ml-2" type="button" onClick={() => setHelpOpen(true)}>
                 Ajuda
               </button>
-              <button className="btn btn-primary btn-sm ml-2" type="button" onClick={() => openVehicle('v1')}>
+              <button className="btn btn-primary btn-sm ml-2" type="button" onClick={createAlertFlow}>
                 Criar alerta
               </button>
             </div>

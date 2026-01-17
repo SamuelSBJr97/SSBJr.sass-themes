@@ -158,4 +158,7 @@ $font-family-sans: "Segoe UI Variable", "Segoe UI", ui-sans-serif, system-ui, -a
 @import "partials/datatables";
 @import "partials/flatpickr";
 
+@import "partials/sweetalert";
+@import "partials/toastr";
+
 @import "partials/dashboard";

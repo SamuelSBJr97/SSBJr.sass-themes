@@ -1,0 +1,23 @@
+// Toastr (notificações)
+// Suporte a classes padrão do toastr.js: #toast-container .toast(.toast-success|info|warning|error)
+
+#toast-container{position:fixed;z-index:1090;pointer-events:none;display:flex;flex-direction:column;gap:.5rem;padding:1rem}
+#toast-container.toast-top-right{top:0;right:0}
+#toast-container.toast-top-left{top:0;left:0}
+#toast-container.toast-bottom-right{bottom:0;right:0}
+#toast-container.toast-bottom-left{bottom:0;left:0}
+
+#toast-container .toast{pointer-events:auto;min-width:260px;max-width:min(420px,calc(100vw - 2rem));padding:.75rem .9rem;border-radius:var(--radius-lg);border:1px solid var(--stroke-1);background:var(--mica);color:var(--text);box-shadow:var(--elev-2)}
+#toast-container .toast:hover{border-color:var(--stroke-2)}
+
+#toast-container .toast .toast-title{font-weight:800;margin-bottom:.15rem}
+#toast-container .toast .toast-message{color:var(--text)}
+
+#toast-container .toast .toast-close-button{float:right;background:transparent;border:0;color:var(--muted);font-size:1.25rem;line-height:1;cursor:pointer}
+#toast-container .toast .toast-close-button:hover{color:var(--text)}
+
+#toast-container .toast:before{content:"";display:block;float:left;width:.35rem;height:100%;min-height:2.25rem;margin-right:.75rem;border-radius:999px;background:var(--secondary)}
+#toast-container .toast.toast-success:before{background:var(--success)}
+#toast-container .toast.toast-info:before{background:var(--info)}
+#toast-container .toast.toast-warning:before{background:var(--warning)}
+#toast-container .toast.toast-error:before{background:var(--danger)}

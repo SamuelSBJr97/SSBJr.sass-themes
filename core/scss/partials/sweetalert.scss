@@ -1,0 +1,28 @@
+// SweetAlert2 (Swal)
+// Estilos mínimos para integrar com os tokens do tema.
+
+.swal2-container{position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;padding:1rem;background:rgba(0,0,0,.55)}
+.swal2-container.swal2-backdrop-show{background:rgba(0,0,0,.55)}
+
+.swal2-popup{width:min(32rem,calc(100vw - 2rem));border-radius:var(--radius-lg);border:1px solid var(--stroke-1);background:var(--mica);color:var(--text);box-shadow:var(--elev-2);overflow:hidden}
+.swal2-title{margin:1rem 1rem .25rem;font-weight:900;font-size:1.15rem}
+.swal2-html-container{margin:0 1rem 1rem;color:var(--muted);line-height:1.4}
+
+.swal2-actions{display:flex;justify-content:flex-end;gap:.5rem;padding:0 1rem 1rem}
+
+.swal2-styled{appearance:none;border:1px solid transparent;border-radius:var(--radius-md);padding:.52rem .95rem;font-weight:600;line-height:1.1;cursor:pointer;user-select:none;transition:background-color .15s ease,border-color .15s ease,box-shadow .15s ease,transform .06s ease}
+.swal2-styled:active{transform:translateY(.5px)}
+.swal2-styled:focus{outline:none;box-shadow:var(--focus-ring)}
+
+.swal2-confirm{background:var(--primary);color:#fff;box-shadow:0 1px 0 rgba(255,255,255,.18) inset,var(--elev-1)}
+.swal2-confirm:hover{box-shadow:0 1px 0 rgba(255,255,255,.18) inset,var(--elev-2)}
+
+.swal2-cancel{background:var(--text-xxsoft);border-color:var(--stroke-1);color:var(--text)}
+.swal2-cancel:hover{background:var(--text-soft);border-color:var(--stroke-2)}
+
+.swal2-icon{margin:1rem auto 0}
+.swal2-icon.swal2-success{border-color:var(--success);color:var(--success)}
+.swal2-icon.swal2-error{border-color:var(--danger);color:var(--danger)}
+.swal2-icon.swal2-warning{border-color:var(--warning);color:var(--warning)}
+.swal2-icon.swal2-info{border-color:var(--info);color:var(--info)}
+.swal2-icon.swal2-question{border-color:var(--secondary);color:var(--secondary)}
