@@ -1046,7 +1046,14 @@ export default function ReportsPage({ vehicles }) {
     setActiveCategory(cat);
     // Ao trocar a categoria, limpa o relatório atual e exige novo "Aplicar".
     setHasApplied(false);
-    updateState(activeDef.id, { rows: [], total: 0, loading: false, page: 1 });
+    updateState(activeDef.id, {
+      page: 1,
+      search: '',
+      filters: activeDef.defaultFilters,
+      rows: [],
+      total: 0,
+      loading: false
+    });
   }
 
   function setActiveReport(id) {
@@ -1055,7 +1062,14 @@ export default function ReportsPage({ vehicles }) {
     if (def?.category) setActiveCategory(def.category);
     // Ao trocar o relatório, limpa os dados e exige novo "Aplicar".
     setHasApplied(false);
-    updateState(id, { rows: [], total: 0, loading: false, page: 1 });
+    updateState(id, {
+      page: 1,
+      search: '',
+      filters: def?.defaultFilters ?? states[id]?.filters,
+      rows: [],
+      total: 0,
+      loading: false
+    });
     setActiveId(id);
   }
 
