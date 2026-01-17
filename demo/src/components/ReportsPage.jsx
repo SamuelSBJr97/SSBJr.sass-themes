@@ -1124,7 +1124,7 @@ export default function ReportsPage({ vehicles }) {
             <div className="card-body">
               <div className="d-flex flex-wrap gap-2">
                 {reportsInCategory.map((r) => {
-                  const active = r.id === activeDef.id;
+                  const active = r.id === activeId;
                   return (
                     <button
                       key={r.id}
