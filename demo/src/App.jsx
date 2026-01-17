@@ -327,7 +327,7 @@ export default function App() {
         <aside id="app-sidebar" className="sidebar">
           <div className="sidebar-header">
             <div className="brand">
-              <div className="brand-mark">STI</div>
+              <div className="brand-mark">SSBJr</div>
               <div className="brand-text">
                 <div className="brand-title">Frotas</div>
                 <div className="brand-subtitle">Rastreamento e Relatórios</div>
