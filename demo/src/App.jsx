@@ -91,7 +91,9 @@ function getInitialUi() {
 
 function applyTheme(themeId, { persist, locked } = {}) {
   const link = document.getElementById('theme-css');
-  if (link) link.setAttribute('href', `assets/css/${themeId}.css`);
+  const base = (import.meta && import.meta.env && import.meta.env.BASE_URL) ? import.meta.env.BASE_URL : './';
+  const href = `${base}assets/css/${themeId}.css`;
+  if (link) link.setAttribute('href', href);
   document.documentElement.setAttribute('data-theme', themeId);
 
   if (persist) {
