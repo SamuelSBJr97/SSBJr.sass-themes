@@ -45,12 +45,10 @@ $ui-vars: (
 
 @mixin ui-vars($id) {
   $vars: map.get($ui-vars, $id);
-  @if $vars == null {
-    @return;
-  }
-
-  @each $name, $value in $vars {
-    --#{$name}: #{$value};
+  @if $vars != null {
+    @each $name, $value in $vars {
+      --#{$name}: #{$value};
+    }
   }
 }
 
