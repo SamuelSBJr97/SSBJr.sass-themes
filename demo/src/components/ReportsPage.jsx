@@ -251,7 +251,7 @@ export default function ReportsPage({ vehicles }) {
   const [draftPeriodDays, setDraftPeriodDays] = useState(7);
   const [draftFleet, setDraftFleet] = useState('');
   const [hasApplied, setHasApplied] = useState(false);
-  const [activeId, setActiveId] = useState('telemetry');
+  const [activeId, setActiveId] = useState('');
   const [activeCategory, setActiveCategory] = useState('Rastreamento');
 
   const [states, setStates] = useState(() => ({
@@ -979,7 +979,7 @@ export default function ReportsPage({ vehicles }) {
     ];
   }, [scopedVehicles, periodDays]);
 
-  const activeDef = useMemo(() => reportDefs.find((r) => r.id === activeId) || reportDefs[0], [reportDefs, activeId]);
+  const activeDef = useMemo(() => reportDefs.find((r) => r.id === activeId) || null, [reportDefs, activeId]);
 
   function updateState(reportId, patch) {
     setStates((s) => ({
@@ -989,7 +989,7 @@ export default function ReportsPage({ vehicles }) {
   }
 
   async function loadActive(overrides = {}) {
-    if (!hasApplied) return;
+    if (!hasApplied || !activeDef) return;
     const id = activeDef.id;
     const st = { ...states[id], ...overrides };
     updateState(id, { ...overrides, loading: true });
@@ -1013,7 +1013,7 @@ export default function ReportsPage({ vehicles }) {
 
   useEffect(() => {
     // Carrega apenas o relatório selecionado (depois que o usuário aplicar filtros).
-    if (!hasApplied) return;
+    if (!hasApplied || !activeDef) return;
     loadActive();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId, fleet, periodDays, hasApplied]);
@@ -1025,7 +1025,7 @@ export default function ReportsPage({ vehicles }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDef?.category]);
 
-  const activeState = states[activeDef.id];
+  const activeState = activeDef ? states[activeDef.id] : null;
 
   const grouped = useMemo(() => {
     const map = new Map();
@@ -1044,16 +1044,19 @@ export default function ReportsPage({ vehicles }) {
   function setCategory(cat) {
     if (cat === activeCategory) return;
     setActiveCategory(cat);
-    // Ao trocar a categoria, limpa o relatório atual e exige novo "Aplicar".
+    // Ao trocar a categoria, desmarca o relatório e limpa tudo até selecionar/aplicar.
     setHasApplied(false);
-    updateState(activeDef.id, {
-      page: 1,
-      search: '',
-      filters: activeDef.defaultFilters,
-      rows: [],
-      total: 0,
-      loading: false
-    });
+    if (activeDef) {
+      updateState(activeDef.id, {
+        page: 1,
+        search: '',
+        filters: activeDef.defaultFilters,
+        rows: [],
+        total: 0,
+        loading: false
+      });
+    }
+    setActiveId('');
   }
 
   function setActiveReport(id) {
@@ -1074,12 +1077,14 @@ export default function ReportsPage({ vehicles }) {
   }
 
   function setActiveFilter(fieldId, value) {
+    if (!activeDef || !activeState) return;
     updateState(activeDef.id, {
       filters: { ...(activeState.filters || {}), [fieldId]: value }
     });
   }
 
   function resetActiveFilters() {
+    if (!activeDef) return;
     updateState(activeDef.id, { filters: activeDef.defaultFilters, page: 1 });
     if (hasApplied) loadActive({ filters: activeDef.defaultFilters, page: 1 });
   }
@@ -1147,138 +1152,146 @@ export default function ReportsPage({ vehicles }) {
               <div className="card-subtitle text-muted">Filtro + dados</div>
             </div>
             <div className="card-body">
-              <div className="mb-3">
-                <div className="font-weight-bold">{activeDef.title}</div>
-                <div className="text-muted small">{activeDef.subtitle}</div>
-              </div>
-
-              <div className="mb-3">
-                <div className="text-muted small mb-2">Escopo</div>
-                <div className="md-form">
-                  <div className="form-row">
-                    <div className="col-md-6">
-                      <div className={`md-field ${draftFleet ? 'is-filled' : ''}`}>
-                        <select
-                          id="reportFleet"
-                          className="form-control"
-                          value={draftFleet}
-                          onChange={(e) => { setDraftFleet(e.target.value); }}
-                        >
-                          <option value="">Todas</option>
-                          {fleetOptions.map((f) => (
-                            <option key={f} value={f}>{f}</option>
-                          ))}
-                        </select>
-                        <label htmlFor="reportFleet">Frota</label>
-                        <small className="md-helper">Escopo dos dados</small>
-                      </div>
-                    </div>
-
-                    <div className="col-md-6">
-                      <div className={`md-field ${draftPeriodDays ? 'is-filled' : ''}`}>
-                        <select
-                          id="reportPeriod"
-                          className="form-control"
-                          value={draftPeriodDays}
-                          onChange={(e) => setDraftPeriodDays(Number(e.target.value))}
-                        >
-                          <option value={1}>Hoje</option>
-                          <option value={7}>Últimos 7 dias</option>
-                          <option value={15}>Últimos 15 dias</option>
-                          <option value={30}>Últimos 30 dias</option>
-                        </select>
-                        <label htmlFor="reportPeriod">Período</label>
-                        <small className="md-helper">Período de apuração</small>
-                      </div>
-                    </div>
-                  </div>
+              {!activeDef ? (
+                <div className="alert alert-info mb-0">
+                  Selecione um tipo de relatório no passo 2 para configurar filtros e visualizar os dados.
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="mb-3">
+                    <div className="font-weight-bold">{activeDef.title}</div>
+                    <div className="text-muted small">{activeDef.subtitle}</div>
+                  </div>
 
-              <div className="mb-3">
-                <div className="text-muted small mb-2">Filtros do relatório</div>
-                <form
-                  className="md-form"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const sameScope = draftFleet === fleet && draftPeriodDays === periodDays;
-
-                    updateState(activeDef.id, sameScope ? { page: 1 } : { page: 1, rows: [], total: 0 });
-                    setHasApplied(true);
-                    setFleet(draftFleet);
-                    setPeriodDays(draftPeriodDays);
-
-                    // Se o escopo não mudou, podemos recarregar imediatamente.
-                    if (sameScope) loadActive({ page: 1 });
-                  }}
-                >
-                  <div className="form-row">
-                    {(activeDef.filters || []).map((field) => {
-                      const value = (activeState.filters || {})[field.id];
-
-                      if (field.type === 'select') {
-                        return (
-                          <div key={field.id} className="col-md-6">
-                            <div className={`md-field ${value !== '' && value != null ? 'is-filled' : ''}`}>
-                              <select
-                                id={`rf-${field.id}`}
-                                className="form-control"
-                                value={value ?? ''}
-                                onChange={(ev) => setActiveFilter(field.id, ev.target.value)}
-                              >
-                                {(field.options || []).map((opt) => (
-                                  <option key={String(opt.value)} value={opt.value}>{opt.label}</option>
-                                ))}
-                              </select>
-                              <label htmlFor={`rf-${field.id}`}>{field.label}</label>
-                              <small className="md-helper">Seleção</small>
-                            </div>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <div key={field.id} className="col-md-6">
-                          <div className={`md-field ${value !== '' && value != null ? 'is-filled' : ''}`}>
-                            <input
-                              id={`rf-${field.id}`}
+                  <div className="mb-3">
+                    <div className="text-muted small mb-2">Escopo</div>
+                    <div className="md-form">
+                      <div className="form-row">
+                        <div className="col-md-6">
+                          <div className={`md-field ${draftFleet ? 'is-filled' : ''}`}>
+                            <select
+                              id="reportFleet"
                               className="form-control"
-                              type="number"
-                              min={field.min}
-                              step={field.step}
-                              placeholder=" "
-                              value={value ?? ''}
-                              onChange={(ev) => setActiveFilter(field.id, ev.target.value)}
-                            />
-                            <label htmlFor={`rf-${field.id}`}>{field.label}</label>
-                            <small className="md-helper">{field.placeholder || 'Filtro'}</small>
+                              value={draftFleet}
+                              onChange={(e) => { setDraftFleet(e.target.value); }}
+                            >
+                              <option value="">Todas</option>
+                              {fleetOptions.map((f) => (
+                                <option key={f} value={f}>{f}</option>
+                              ))}
+                            </select>
+                            <label htmlFor="reportFleet">Frota</label>
+                            <small className="md-helper">Escopo dos dados</small>
                           </div>
                         </div>
-                      );
-                    })}
+
+                        <div className="col-md-6">
+                          <div className={`md-field ${draftPeriodDays ? 'is-filled' : ''}`}>
+                            <select
+                              id="reportPeriod"
+                              className="form-control"
+                              value={draftPeriodDays}
+                              onChange={(e) => setDraftPeriodDays(Number(e.target.value))}
+                            >
+                              <option value={1}>Hoje</option>
+                              <option value={7}>Últimos 7 dias</option>
+                              <option value={15}>Últimos 15 dias</option>
+                              <option value={30}>Últimos 30 dias</option>
+                            </select>
+                            <label htmlFor="reportPeriod">Período</label>
+                            <small className="md-helper">Período de apuração</small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="d-flex flex-wrap gap-2">
-                    <button className="btn btn-primary" type="submit" disabled={activeState.loading}>
-                      Aplicar filtros
-                    </button>
-                    <button className="btn btn-outline-secondary" type="button" onClick={() => resetActiveFilters()} disabled={activeState.loading}>
-                      Limpar filtros
-                    </button>
-                    <button className="btn btn-outline-secondary" type="button" onClick={() => loadActive()} disabled={!hasApplied || activeState.loading}>
-                      Recarregar
-                    </button>
-                    <button
-                      className="btn btn-outline-info"
-                      type="button"
-                      onClick={() => activeDef.exportAll({ search: activeState.search, filters: activeState.filters })}
-                      disabled={!hasApplied || activeState.loading}
+                  <div className="mb-3">
+                    <div className="text-muted small mb-2">Filtros do relatório</div>
+                    <form
+                      className="md-form"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        const sameScope = draftFleet === fleet && draftPeriodDays === periodDays;
+
+                        updateState(activeDef.id, sameScope ? { page: 1 } : { page: 1, rows: [], total: 0 });
+                        setHasApplied(true);
+                        setFleet(draftFleet);
+                        setPeriodDays(draftPeriodDays);
+
+                        // Se o escopo não mudou, podemos recarregar imediatamente.
+                        if (sameScope) loadActive({ page: 1 });
+                      }}
                     >
-                      Exportar CSV
-                    </button>
+                      <div className="form-row">
+                        {(activeDef.filters || []).map((field) => {
+                          const value = (activeState?.filters || {})[field.id];
+
+                          if (field.type === 'select') {
+                            return (
+                              <div key={field.id} className="col-md-6">
+                                <div className={`md-field ${value !== '' && value != null ? 'is-filled' : ''}`}>
+                                  <select
+                                    id={`rf-${field.id}`}
+                                    className="form-control"
+                                    value={value ?? ''}
+                                    onChange={(ev) => setActiveFilter(field.id, ev.target.value)}
+                                  >
+                                    {(field.options || []).map((opt) => (
+                                      <option key={String(opt.value)} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                  </select>
+                                  <label htmlFor={`rf-${field.id}`}>{field.label}</label>
+                                  <small className="md-helper">Seleção</small>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div key={field.id} className="col-md-6">
+                              <div className={`md-field ${value !== '' && value != null ? 'is-filled' : ''}`}>
+                                <input
+                                  id={`rf-${field.id}`}
+                                  className="form-control"
+                                  type="number"
+                                  min={field.min}
+                                  step={field.step}
+                                  placeholder=" "
+                                  value={value ?? ''}
+                                  onChange={(ev) => setActiveFilter(field.id, ev.target.value)}
+                                />
+                                <label htmlFor={`rf-${field.id}`}>{field.label}</label>
+                                <small className="md-helper">{field.placeholder || 'Filtro'}</small>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="d-flex flex-wrap gap-2">
+                        <button className="btn btn-primary" type="submit" disabled={activeState?.loading}>
+                          Aplicar filtros
+                        </button>
+                        <button className="btn btn-outline-secondary" type="button" onClick={() => resetActiveFilters()} disabled={activeState?.loading}>
+                          Limpar filtros
+                        </button>
+                        <button className="btn btn-outline-secondary" type="button" onClick={() => loadActive()} disabled={!hasApplied || activeState?.loading}>
+                          Recarregar
+                        </button>
+                        <button
+                          className="btn btn-outline-info"
+                          type="button"
+                          onClick={() => activeDef.exportAll({ search: activeState?.search, filters: activeState?.filters })}
+                          disabled={!hasApplied || activeState?.loading}
+                        >
+                          Exportar CSV
+                        </button>
+                      </div>
+                    </form>
                   </div>
-                </form>
-              </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -1288,20 +1301,24 @@ export default function ReportsPage({ vehicles }) {
               <div className="card-subtitle text-muted">Pré-visualização paginada</div>
             </div>
             <div className="card-body">
-              {!hasApplied ? (
+              {!activeDef ? (
+                <div className="alert alert-info mb-0">
+                  Selecione um tipo de relatório para visualizar os dados.
+                </div>
+              ) : !hasApplied ? (
                 <div className="alert alert-info mb-0">
                   Aplique os filtros para exibir os dados do relatório.
                 </div>
               ) : (
                 <DataTable
                   mode="server"
-                  rows={activeState.rows}
-                  totalRows={activeState.total}
-                  page={activeState.page}
-                  pageSize={activeState.pageSize}
-                  search={activeState.search}
-                  sort={activeState.sort}
-                  loading={activeState.loading}
+                  rows={activeState?.rows || []}
+                  totalRows={activeState?.total || 0}
+                  page={activeState?.page || 1}
+                  pageSize={activeState?.pageSize || 10}
+                  search={activeState?.search || ''}
+                  sort={activeState?.sort || { colId: null, dir: 'asc' }}
+                  loading={activeState?.loading}
                   onPageChange={(p) => loadActive({ page: p })}
                   onPageSizeChange={(n) => loadActive({ pageSize: n, page: 1 })}
                   onSearchChange={(v) => loadActive({ search: v, page: 1 })}
