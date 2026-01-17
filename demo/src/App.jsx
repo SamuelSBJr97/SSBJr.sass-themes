@@ -201,6 +201,13 @@ export default function App() {
   const fixedUi = useMemo(() => getFixedUi(), []);
   const [theme, setTheme] = useState(() => getInitialTheme());
   const [ui, setUi] = useState(() => getInitialUi());
+  const [lastLightTheme, setLastLightTheme] = useState(() => {
+    try {
+      return localStorage.getItem('demo.lastLightTheme') || 'aurora';
+    } catch {
+      return 'aurora';
+    }
+  });
 
   const [view] = useHashView('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -231,6 +238,17 @@ export default function App() {
   useEffect(() => {
     applyTheme(theme, { persist: !fixedTheme, locked: !!fixedTheme });
   }, [theme, fixedTheme]);
+
+  useEffect(() => {
+    if (theme !== 'carbon') {
+      setLastLightTheme(theme);
+      try {
+        localStorage.setItem('demo.lastLightTheme', theme);
+      } catch {
+        // ignore
+      }
+    }
+  }, [theme]);
 
   useEffect(() => {
     applyUi(ui, { persist: !fixedUi });
@@ -353,6 +371,12 @@ export default function App() {
     toastr.success('CSV exportado: veiculos.csv');
   }
 
+  function toggleLightDark() {
+    if (fixedTheme) return;
+    if (theme === 'carbon') setTheme(lastLightTheme || 'aurora');
+    else setTheme('carbon');
+  }
+
   return (
     <>
       <a className="sr-only sr-only-focusable" href="#main">Pular para conteúdo</a>
@@ -433,6 +457,9 @@ export default function App() {
 
               <button className="btn btn-outline-secondary btn-sm ml-2" type="button" onClick={() => setHelpOpen(true)}>
                 Ajuda
+              </button>
+              <button className="btn btn-outline-secondary btn-sm ml-2" type="button" onClick={toggleLightDark} disabled={!!fixedTheme}>
+                {theme === 'carbon' ? 'Claro' : 'Escuro'}
               </button>
               <button className="btn btn-primary btn-sm ml-2" type="button" onClick={createAlertFlow}>
                 Criar alerta
