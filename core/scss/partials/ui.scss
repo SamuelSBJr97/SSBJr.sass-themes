@@ -29,7 +29,7 @@ $ui-vars: (
     "control-bg-hover": var(--surface-2)
   ),
   "cupertino": (
-    "font-sans": -apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,"Segoe UI",Roboto,Helvetica,Arial,
+    "font-sans": string.unquote("-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, 'Segoe UI', Roboto, Helvetica, Arial"),
     "radius-sm": 10px,
     "radius-md": 14px,
     "radius-lg": 20px,
