@@ -1,6 +1,7 @@
 (function () {
   const themeSelect = document.getElementById('theme');
   const themeLink = document.getElementById('theme-css');
+  const uiSelect = document.getElementById('ui');
 
   // Sidebar (mobile)
   const sidebar = document.querySelector('.sidebar');
@@ -49,8 +50,17 @@
     }
   }
 
+  function getMeta(name) {
+    const el = document.querySelector(`meta[name="${name}"]`);
+    return el ? el.getAttribute('content') : null;
+  }
+
   function isFixedThemePage() {
     return document.body && document.body.hasAttribute('data-fixed-theme');
+  }
+
+  function isFixedUiPage() {
+    return document.body && document.body.hasAttribute('data-fixed-ui');
   }
 
   function getInitialTheme() {
@@ -67,6 +77,25 @@
     if (themeSelect && themeSelect.value) return themeSelect.value;
 
     return 'aurora';
+  }
+
+  function getInitialUi() {
+    const queryUi = getQueryParam('ui');
+    if (queryUi) return queryUi;
+
+    if (isFixedUiPage()) return document.body.getAttribute('data-fixed-ui');
+
+    const meta = getMeta('demo-ui');
+    if (meta) return meta;
+
+    try {
+      const saved = localStorage.getItem('demo.ui');
+      if (saved) return saved;
+    } catch (_) {}
+
+    if (uiSelect && uiSelect.value) return uiSelect.value;
+
+    return 'fluid';
   }
 
   function setTheme(themeId, options) {
@@ -86,11 +115,37 @@
     }
   }
 
+  function setUi(uiId, options) {
+    const opts = options || {};
+    const next = (uiId || '').toString().trim();
+
+    if (next) document.documentElement.setAttribute('data-ui', next);
+    else document.documentElement.removeAttribute('data-ui');
+
+    if (uiSelect) {
+      uiSelect.value = next;
+      if (opts.locked) uiSelect.setAttribute('disabled', 'disabled');
+    }
+
+    if (!opts.skipPersist) {
+      try {
+        localStorage.setItem('demo.ui', next);
+      } catch (_) {}
+    }
+  }
+
   const initialTheme = getInitialTheme();
   setTheme(initialTheme, { locked: isFixedThemePage() });
 
+  const initialUi = getInitialUi();
+  setUi(initialUi, { locked: isFixedUiPage() });
+
   if (themeSelect && !isFixedThemePage()) {
     themeSelect.addEventListener('change', (e) => setTheme(e.target.value));
+  }
+
+  if (uiSelect && !isFixedUiPage()) {
+    uiSelect.addEventListener('change', (e) => setUi(e.target.value));
   }
 
   // Select2

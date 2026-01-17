@@ -62,6 +62,23 @@ function getInitialTheme() {
   return 'aurora';
 }
 
+function getInitialUi() {
+  const queryUi = getQueryParam('ui');
+  if (queryUi) return queryUi;
+
+  const meta = getMeta('demo-ui');
+  if (meta) return meta;
+
+  try {
+    const saved = localStorage.getItem('demo.ui');
+    if (saved) return saved;
+  } catch {
+    // ignore
+  }
+
+  return 'fluid';
+}
+
 function applyTheme(themeId, { persist, locked } = {}) {
   const link = document.getElementById('theme-css');
   if (link) link.setAttribute('href', `assets/css/${themeId}.css`);
@@ -79,6 +96,20 @@ function applyTheme(themeId, { persist, locked } = {}) {
     document.documentElement.setAttribute('data-theme-locked', 'true');
   } else {
     document.documentElement.removeAttribute('data-theme-locked');
+  }
+}
+
+function applyUi(uiId, { persist } = {}) {
+  const next = (uiId || '').toString().trim();
+  if (next) document.documentElement.setAttribute('data-ui', next);
+  else document.documentElement.removeAttribute('data-ui');
+
+  if (persist) {
+    try {
+      localStorage.setItem('demo.ui', next);
+    } catch {
+      // ignore
+    }
   }
 }
 
@@ -158,6 +189,7 @@ function vehicleSearchText(v) {
 export default function App() {
   const fixedTheme = useMemo(() => getFixedTheme(), []);
   const [theme, setTheme] = useState(() => getInitialTheme());
+  const [ui, setUi] = useState(() => getInitialUi());
 
   const [view] = useHashView('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -176,6 +208,10 @@ export default function App() {
   useEffect(() => {
     applyTheme(theme, { persist: !fixedTheme, locked: !!fixedTheme });
   }, [theme, fixedTheme]);
+
+  useEffect(() => {
+    applyUi(ui, { persist: true });
+  }, [ui]);
 
   useEffect(() => {
     if (!sidebarOpen) return;
@@ -334,6 +370,20 @@ export default function App() {
                   <option value="aurora">Aurora (claro)</option>
                   <option value="carbon">Carbon (escuro)</option>
                   <option value="atlas">Atlas (claro/tech)</option>
+                </select>
+              </div>
+
+              <div className="form-inline ml-2">
+                <label className="mr-2 text-muted small" htmlFor="ui">Estilo</label>
+                <select
+                  id="ui"
+                  className="custom-select custom-select-sm"
+                  value={ui}
+                  onChange={(e) => setUi(e.target.value)}
+                >
+                  <option value="fluid">Fluid</option>
+                  <option value="material">Material</option>
+                  <option value="cupertino">Cupertino</option>
                 </select>
               </div>
 
