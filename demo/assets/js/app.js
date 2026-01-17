@@ -100,7 +100,7 @@
 
   function setTheme(themeId, options) {
     const opts = options || {};
-    if (themeLink) themeLink.setAttribute('href', `assets/css/${themeId}.css`);
+    if (themeLink) themeLink.setAttribute('href', new URL(`assets/css/${themeId}.css`, document.baseURI).toString());
     document.documentElement.setAttribute('data-theme', themeId);
 
     if (themeSelect) {
